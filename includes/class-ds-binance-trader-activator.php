@@ -37,6 +37,7 @@ class Ds_Binance_Trader_Activator
 
 
 		self::ds_bt_trade_table();
+		self::ds_bt_symbol_table();
 	}
 
 	public static function ds_bt_trade_table()
@@ -68,6 +69,33 @@ class Ds_Binance_Trader_Activator
 			$sql .= "  `transactTime` varchar(255) NOT NULL, ";
 
 
+			$sql .= "  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ";
+			$sql .= "  `updated_at` TIMESTAMP NULL DEFAULT NULL, ";
+			$sql .= "  `deleted_at` TIMESTAMP NULL DEFAULT NULL, ";
+
+			$sql .= "  PRIMARY KEY (`id`) ";
+
+			$sql .= ") ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ; ";
+
+			dbDelta($sql);
+		}
+	}
+	public static function ds_bt_symbol_table()
+	{
+
+		global $table_prefix, $wpdb;
+
+		$wp_xcc_table = $table_prefix . "ds_bt_symbols";
+
+		if ($wpdb->get_var("show tables like '$wp_xcc_table'") != $wp_xcc_table) {
+			$sql = "CREATE TABLE `" . $wp_xcc_table . "` ( ";
+			$sql .= "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT, ";
+
+			$sql .= "  `symbol` varchar(10) NOT NULL, ";
+			$sql .= "  `precisionPrice`  int(10) NOT NULL, ";
+			$sql .= "  `precisionQuantity`  int(10) NOT NULL, ";
+			$sql .= "  `is_available_on_margin`  int(10) NOT NULL, ";
+			 
 			$sql .= "  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ";
 			$sql .= "  `updated_at` TIMESTAMP NULL DEFAULT NULL, ";
 			$sql .= "  `deleted_at` TIMESTAMP NULL DEFAULT NULL, ";
