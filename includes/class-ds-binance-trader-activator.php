@@ -52,7 +52,7 @@ class Ds_Binance_Trader_Activator
 			$sql .= "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT, ";
 
 			$sql .= "  `symbol` varchar(10) NOT NULL, ";
-			
+
 			$sql .= "  `side` varchar(10) NOT NULL, ";
 			$sql .= "  `type` varchar(10) NOT NULL, ";
 			$sql .= "  `quantity` DECIMAL(16,8) NOT NULL, ";
@@ -62,7 +62,7 @@ class Ds_Binance_Trader_Activator
 			$sql .= "  `buy_id` int(10) unsigned, ";
 			$sql .= "  `profit_loss` varchar(10), "; //p, l
 			$sql .= "  `profit_loss_amount` varchar(10), ";
-			
+
 			$sql .= "  `orderId` varchar(255) NOT NULL, ";
 			$sql .= "  `orderListId` varchar(255) NOT NULL, ";
 			$sql .= "  `clientOrderId` varchar(255) NOT NULL, ";
@@ -95,7 +95,8 @@ class Ds_Binance_Trader_Activator
 			$sql .= "  `precisionPrice`  int(10) NOT NULL, ";
 			$sql .= "  `precisionQuantity`  int(10) NOT NULL, ";
 			$sql .= "  `is_available_on_margin`  int(10) NOT NULL, ";
-			 
+			$sql .= "  `market_price` varchar(50) NOT NULL, ";
+
 			$sql .= "  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ";
 			$sql .= "  `updated_at` TIMESTAMP NULL DEFAULT NULL, ";
 			$sql .= "  `deleted_at` TIMESTAMP NULL DEFAULT NULL, ";

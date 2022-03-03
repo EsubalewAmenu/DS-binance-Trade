@@ -29,6 +29,18 @@ class Ds_bt_spot
 
     public function main()
     {
+        $secret = 'tSicM8dB17cncJzmKt4PnGxMh1OXE8aIBnbMnyEnayVNlXpgJhLKjqTZlXZp7yDO';
+        $key = '0red2ruc3xogwntDl658JYQaNJAjx8wRQSbSGILRvjRMeHiGEt9Y3dcqp6X5wHf0';
+
+        $symbol = "LUNA";
+        // $side = "BUY";
+        // $quantity = "0.00256";
+        // $price = "44090";
+        $interval = "15m";
+        $precisionPrice = 2;
+        // $precisionQuantity = 5;//btc
+        $precisionQuantity = 2; //luna
+        $recvWindow = 50000;
 
         global $table_prefix, $wpdb;
 
@@ -41,29 +53,27 @@ class Ds_bt_spot
             print_r($orderList);
             foreach ($orderList as $order) {
                 # code...
-                self::openOrder($order);
+                self::openOrder($order, $interval, $recvWindow, $key, $secret);
             }
         } else {
-            self::requestNewOrder();
+            self::myAccount($symbol, $precisionPrice, $precisionQuantity, $interval, $key, $secret);
         }
     }
 
-    public function openOrder($order)
+    public function openOrder($order, $interval, $recvWindow, $key, $secret)
     {
-        $secret = 'tSicM8dB17cncJzmKt4PnGxMh1OXE8aIBnbMnyEnayVNlXpgJhLKjqTZlXZp7yDO';
-        $key = '0red2ruc3xogwntDl658JYQaNJAjx8wRQSbSGILRvjRMeHiGEt9Y3dcqp6X5wHf0';
 
         $response = self::signedRequest('GET', 'api/v3/order', [
             'symbol' => $order->symbol,
             'orderId' => $order->orderId,
             'origClientOrderId' => $order->clientOrderId,
-            'recvWindow' => 50000,
+            'recvWindow' => $recvWindow,
         ], $key, $secret);
 
 
 
-        // echo "</br>open order</br>";
-        // print_r($response);
+        echo "</br>open order</br>";
+        print_r($response);
         if ($response['code'] == 200 || $response['code'] == 201) {
 
             $response = json_decode($response['result'], true);
@@ -75,53 +85,193 @@ class Ds_bt_spot
                 $wp_ds_table = $table_prefix . "ds_bt_trades";
 
                 $data = ['status' => $response['status']];
-                $where = ['orderId' => $order->orderId, 'origClientOrderId' => $order->clientOrderId];
+                $where = ['orderId' => $order->orderId, 'clientOrderId' => $order->clientOrderId];
                 $wpdb->update($wp_ds_table, $data, $where);
 
 
-                self::requestNewOrder();
-            } else echo "there is no change on status";
+                // self::myAccount();
+
+            } else {
+
+
+                echo "there is no change on status ";
+
+                $advisedPrices = self::kline($response['symbol'], $interval, $key, $secret); // price range
+                // print_r($response);
+                if ($response['side'] == "SELL") {
+                    if ($response['price'] > $advisedPrices['high']) {
+                        echo "over high! cancel and re-order";
+                        self::cancelOrder($response['symbol'], $response['orderId'], $response['clientOrderId'], $recvWindow, $key, $secret);
+                    } else echo "It's still below the high";
+                } else if ($response['side'] == "BUY") {
+                    if ($response['price'] < $advisedPrices['low']) {
+                        echo "too low! cancel and re-order";
+                        self::cancelOrder($response['symbol'], $response['orderId'], $response['clientOrderId'], $recvWindow, $key, $secret);
+                    } else echo "It's still above the low";
+                }
+            }
         }
     }
 
-    public function requestNewOrder()//should pass buy or sell
+    public function cancelOrder($symbol, $orderId, $origClientOrderId, $recvWindow, $key, $secret)
     {
-        $symbol = "BTCBUSD";
-        $side = "BUY";
+        // place order, make sure API key and secret are set, recommend to test on testnet.
+        $response = self::signedRequest('DELETE', 'api/v3/order', [
+            'symbol' => $symbol,
+            'orderId' => $orderId,
+            'recvWindow' => $recvWindow,
+        ], $key, $secret);
+
+
+        echo "response is ";
+        print_r($response);
+        echo "response end";
+
+        // if ($response['code'] == 200 || $response['code'] == 201) {
+
+        //     echo "symbol is";
+
+        //     $jsonResponse = json_decode($response['result'], true);
+        //     print_r($jsonResponse);
+        //     echo $jsonResponse['symbol'];
+
+        //     global $table_prefix, $wpdb;
+
+        //     $wp_ds_table = $table_prefix . "ds_bt_trades";
+
+        //     $dbResult = $wpdb->insert($wp_ds_table, array(
+        //         'symbol' => $jsonResponse['symbol'],
+        //         'side' => $jsonResponse['side'],
+        //         'type' => $jsonResponse['type'],
+        //         'quantity' => $jsonResponse['origQty'],
+        //         'price' => $jsonResponse['price'],
+        //         'status' => "NEW",
+
+        //         'orderId' => $jsonResponse['orderId'],
+        //         'orderListId' => $jsonResponse['orderListId'],
+        //         'clientOrderId' => $jsonResponse['clientOrderId'],
+        //         'transactTime' => $jsonResponse['transactTime'],
+
+        //     ));
+        //     // echo "dbResult is " . $dbResult;
+        // } else {
+        //     echo "response is error";
+        //     print_r($response['result']);
+        // }
+
+        // echo json_encode($response);
+    }
+
+    public function myAccount($symbol, $precisionPrice, $precisionQuantity, $interval, $key, $secret)
+    {
+        // get account information, make sure API key and secret are set
+        $response = self::signedRequest('GET', 'api/v3/account', [], $key, $secret);
+        // echo json_encode($response);
+
+        if ($response['code'] == 200 || $response['code'] == 201) {
+
+            $response = json_decode($response['result'], true);
+
+            global $table_prefix, $wpdb;
+            $wp_ds_table = $table_prefix . "ds_bt_symbols";
+
+            foreach ($response['balances'] as $asset) {
+
+
+                if ($asset['asset'] != "BUSD" && $asset['free'] > 0) {
+                    echo "there is " . $asset['free'] . " free " . $asset['asset'] . " ";
+
+                    $dbSymbol = $wpdb->get_row("SELECT * FROM " . $wp_ds_table . " WHERE symbol='" . $asset['asset'] . "' and market_price!='0'");
+
+                    if (!$dbSymbol) {
+                        $currentPrice = self::getPrice($asset['asset'] . "BUSD", $key, $secret); // price range
+                        echo "Current price * free is " . ($asset['free'] * $currentPrice) . " where current price is " . $currentPrice . "</br>";
+
+                        $dbSymbol = $wpdb->get_row("SELECT * FROM " . $wp_ds_table . " WHERE symbol='" . $asset['asset'] . "'");
+                        if ($dbSymbol) {
+                            $data = ['market_price' => $currentPrice];
+                            $where = ['symbol' => $asset['asset']];
+                            $wpdb->update($wp_ds_table, $data, $where);
+                        } else {
+                            $wpdb->insert($wp_ds_table, array(
+                                'symbol' => $asset['asset'],
+                                'precisionPrice' => 10,
+                                'precisionQuantity' => 10,
+                                'is_available_on_margin' => "3",
+                                'market_price' => $currentPrice,
+
+                            ));
+                        }
+                    } else $currentPrice = $dbSymbol->market_price;
+
+                    if (($asset['free'] * $currentPrice) > 13) {
+                        $currentPrice = self::getPrice($asset['asset'] . "BUSD", $key, $secret); // price range
+                        if ($currentPrice != 0) {
+                            $data = ['market_price' => $currentPrice];
+                            $where = ['symbol' => $asset['asset']];
+                            $wpdb->update($wp_ds_table, $data, $where);
+                        }
+                        echo "sell will be ordered for " . $asset['asset'] . "BUSD";
+                        self::requestNewOrder($asset['asset'] . "BUSD", "SELL", $asset['free'], $precisionPrice, $precisionQuantity, $interval, $key, $secret);
+                    }
+                }
+
+                if ($asset['asset'] == "BUSD") {
+                    echo "current BUSD is " . $asset['free'];
+                    echo "</br>";
+
+                    $asset['free'] = $asset['free'] - ($asset['free'] * (1 / 100));
+
+                    if ($asset['free'] > 13) self::requestNewOrder($symbol . $asset['asset'], "BUY", $asset['free'], $precisionPrice, $precisionQuantity, $interval, $key, $secret);
+                    // return $asset['free'];
+                } //else return 0;
+            }
+        } else return 0;
+    }
+    public function requestNewOrder($symbol, $side, $freeAsset, $precisionPrice, $precisionQuantity, $interval, $key, $secret) //should pass buy or sell
+    {
         $type = "LIMIT";
-        $quantity = "0.00256";
-        $price = "44090";
         $recvWindow = "50000";
 
-        $precisionPrice = 2;
-        $precisionQuantity = 5;
 
-        $secret = 'tSicM8dB17cncJzmKt4PnGxMh1OXE8aIBnbMnyEnayVNlXpgJhLKjqTZlXZp7yDO';
-        $key = '0red2ruc3xogwntDl658JYQaNJAjx8wRQSbSGILRvjRMeHiGEt9Y3dcqp6X5wHf0';
-
-
-        $advisedPrices = self::kline($symbol, $key, $secret); // price range
+        $advisedPrices = self::kline($symbol, $interval, $key, $secret); // price range
 
         $currentPrice = self::getPrice($symbol, $key, $secret); // price range
 
         // get my balance
-        $myAvailableBUSD = 110;
+        // $freeAsset = 110;
 
         if ($advisedPrices['success'] == "true") {
             if ($currentPrice > 0) {
+                echo "side is " . $side;
+                if ($side == "BUY") {
 
-                if ($currentPrice > $advisedPrices['lower']) $price = round($advisedPrices['lower'], $precisionPrice);
-                else $price = round($currentPrice, $precisionPrice);
+                    if ($currentPrice > $advisedPrices['lower']) $price = round($advisedPrices['lower'], $precisionPrice);
+                    else $price = round($currentPrice, $precisionPrice);
 
 
-                $quantity = round(($myAvailableBUSD / $price), $precisionQuantity);
+                    $quantity = round(($freeAsset / $price), $precisionQuantity);
 
-                echo "myAvailableBUSD = " . $myAvailableBUSD . "</br>";
-                echo "price = " . $price . "</br>";
-                echo "quantity = " . $quantity . "</br>";
+                    echo "freeAsset = " . $freeAsset . "</br>";
+                    echo "price = " . $price . "</br>";
+                    echo "quantity = " . $quantity . "</br>";
 
-                self::order($symbol, $side, $type, $quantity, $price, $recvWindow, $key, $secret);
-                // // self::order($symbol, "SELL", $type, "0.00162", "43750.20", $recvWindow, $key, $secret);
+                    self::order($symbol, $side, $type, $quantity, $price, $recvWindow, $key, $secret);
+                } else if ($side == "SELL") {
+
+                    if ($currentPrice > $advisedPrices['higher']) $price = round($currentPrice, $precisionPrice);
+                    else $price = round($advisedPrices['higher'], $precisionPrice);
+
+
+                    // $quantity = round(($freeAsset / $price), $precisionQuantity);
+                    $quantity = $freeAsset;
+
+                    echo "freeAsset = " . $freeAsset . "</br>";
+                    echo "price = " . $price . "</br>";
+                    echo "quantity = " . $quantity . "</br>";
+
+                    self::order($symbol, $side, $type, $quantity, $price, $recvWindow, $key, $secret);
+                }
 
                 // self::order($symbol, $side, $type, 0.00250, "40000.00", $recvWindow, $key, $secret);
             } else echo "We can't get current market price";
@@ -144,11 +294,11 @@ class Ds_bt_spot
             } else return 0;
         } else return 0;
     }
-    public function kline($symbol, $key, $secret)
+    public function kline($symbol, $interval, $key, $secret)
     {
         $query = self::buildQuery([
             'symbol' => $symbol,
-            'interval' => "5m",
+            'interval' => $interval,
             'limit' => 1
         ]);
 
@@ -178,7 +328,7 @@ class Ds_bt_spot
 
             // echo json_encode($response);
 
-            return array("success" => "true", "lower" => $lowHalfOfAvarage, "higher" => $HighHalfOfAvarage);
+            return array("success" => "true", "lower" => $lowHalfOfAvarage, "higher" => $HighHalfOfAvarage, "low" => $low, "high" => $high);
         } else array("success" => "false");
     }
 
@@ -189,9 +339,6 @@ class Ds_bt_spot
         // $response = self::sendRequest('GET', "api/v3/depth?symbol=$symbol&limit=5");
         // echo json_encode($response);
 
-        // get account information, make sure API key and secret are set
-        // $response = self::signedRequest('GET', 'api/v3/account');
-        // echo json_encode($response);
 
         // place order, make sure API key and secret are set, recommend to test on testnet.
         $response = self::signedRequest('POST', 'api/v3/order', [
@@ -232,7 +379,7 @@ class Ds_bt_spot
                 'transactTime' => $jsonResponse['transactTime'],
 
             ));
-            echo "dbResult is " . $dbResult;
+            // echo "dbResult is " . $dbResult;
         } else {
             echo "response is error";
             print_r($response['result']);

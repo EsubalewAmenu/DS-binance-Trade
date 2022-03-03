@@ -121,6 +121,7 @@ class Ds_Binance_Trader
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/controller/buysell.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/controller/common.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/controller/spot.php';
+		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/controller/api/base_api.php';
 
 		/**
 		 * The class responsible for defining all actions that occur in the public-facing
@@ -166,8 +167,12 @@ class Ds_Binance_Trader
 
 		// $Ds_bt_buysell = new Ds_bt_buysell();
 		// $Ds_bt_buysell->main();
-		$Ds_bt_spot = new Ds_bt_spot();
-		$Ds_bt_spot->main();
+
+		// $Ds_bt_spot = new Ds_bt_spot();
+		// $Ds_bt_spot->main();
+
+		$DS_bt_admin_base_api = new DS_bt_admin_base_api();
+		$this->loader->add_action('rest_api_init', $DS_bt_admin_base_api, 'rest_check_trade', 1, 1);
 	}
 
 	/**
