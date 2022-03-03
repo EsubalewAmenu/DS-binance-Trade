@@ -33,13 +33,15 @@ class Ds_bt_spot
         $key = '0red2ruc3xogwntDl658JYQaNJAjx8wRQSbSGILRvjRMeHiGEt9Y3dcqp6X5wHf0';
 
         $symbol = "LUNA";
+        // $symbol = "GLMR";
         // $side = "BUY";
         // $quantity = "0.00256";
         // $price = "44090";
-        $interval = "15m";
-        $precisionPrice = 2;
+        $interval = "30m";
+        // $precisionPrice = 2;
         // $precisionQuantity = 5;//btc
-        $precisionQuantity = 2; //luna
+        // $precisionQuantity = 2; //luna
+        // $precisionQuantity = 1; //GLMR
         $recvWindow = 50000;
 
         global $table_prefix, $wpdb;
@@ -53,14 +55,14 @@ class Ds_bt_spot
             print_r($orderList);
             foreach ($orderList as $order) {
                 # code...
-                self::openOrder($order, $interval, $recvWindow, $key, $secret);
+                self::openOrder($order, $interval, $symbol, $recvWindow, $key, $secret);
             }
         } else {
-            self::myAccount($symbol, $precisionPrice, $precisionQuantity, $interval, $key, $secret);
+            self::myAccount($symbol,$interval, $key, $secret);
         }
     }
 
-    public function openOrder($order, $interval, $recvWindow, $key, $secret)
+    public function openOrder($order, $interval, $symbol, $recvWindow, $key, $secret)
     {
 
         $response = self::signedRequest('GET', 'api/v3/order', [
@@ -72,8 +74,8 @@ class Ds_bt_spot
 
 
 
-        echo "</br>open order</br>";
-        print_r($response);
+        // echo "</br>open order</br>";
+        // print_r($response);
         if ($response['code'] == 200 || $response['code'] == 201) {
 
             $response = json_decode($response['result'], true);
@@ -89,7 +91,7 @@ class Ds_bt_spot
                 $wpdb->update($wp_ds_table, $data, $where);
 
 
-                // self::myAccount();
+                self::myAccount($symbol, $interval, $key, $secret);
 
             } else {
 
@@ -162,7 +164,7 @@ class Ds_bt_spot
         // echo json_encode($response);
     }
 
-    public function myAccount($symbol, $precisionPrice, $precisionQuantity, $interval, $key, $secret)
+    public function myAccount($symbol, $interval, $key, $secret)
     {
         // get account information, make sure API key and secret are set
         $response = self::signedRequest('GET', 'api/v3/account', [], $key, $secret);
@@ -181,7 +183,7 @@ class Ds_bt_spot
                 if ($asset['asset'] != "BUSD" && $asset['free'] > 0) {
                     echo "there is " . $asset['free'] . " free " . $asset['asset'] . " ";
 
-                    $dbSymbol = $wpdb->get_row("SELECT * FROM " . $wp_ds_table . " WHERE symbol='" . $asset['asset'] . "' and market_price!='0'");
+                    $dbSymbol = $wpdb->get_row("SELECT * FROM " . $wp_ds_table . " WHERE symbol='" . $asset['asset'] . "' and market_price!='-1'");
 
                     if (!$dbSymbol) {
                         $currentPrice = self::getPrice($asset['asset'] . "BUSD", $key, $secret); // price range
@@ -203,10 +205,12 @@ class Ds_bt_spot
                             ));
                         }
                     } else $currentPrice = $dbSymbol->market_price;
+                    $precisionPrice = $dbSymbol->precisionPrice;
+                    $precisionQuantity = $dbSymbol->precisionQuantity;
 
                     if (($asset['free'] * $currentPrice) > 13) {
                         $currentPrice = self::getPrice($asset['asset'] . "BUSD", $key, $secret); // price range
-                        if ($currentPrice != 0) {
+                        if ($currentPrice != -1) {
                             $data = ['market_price' => $currentPrice];
                             $where = ['symbol' => $asset['asset']];
                             $wpdb->update($wp_ds_table, $data, $where);
@@ -220,7 +224,7 @@ class Ds_bt_spot
                     echo "current BUSD is " . $asset['free'];
                     echo "</br>";
 
-                    $asset['free'] = $asset['free'] - ($asset['free'] * (1 / 100));
+                    $asset['free'] = $asset['free'] - (($asset['free'] * 0.5) / 100);
 
                     if ($asset['free'] > 13) self::requestNewOrder($symbol . $asset['asset'], "BUY", $asset['free'], $precisionPrice, $precisionQuantity, $interval, $key, $secret);
                     // return $asset['free'];
@@ -262,9 +266,16 @@ class Ds_bt_spot
                     if ($currentPrice > $advisedPrices['higher']) $price = round($currentPrice, $precisionPrice);
                     else $price = round($advisedPrices['higher'], $precisionPrice);
 
+                    if($precisionQuantity == 1) $precisionQuantity = 10;
+                    else if($precisionQuantity == 2) $precisionQuantity = 100;
+                    else if($precisionQuantity == 3) $precisionQuantity = 1000;
+                    else if($precisionQuantity == 4) $precisionQuantity = 10000;
+                    else if($precisionQuantity == 5) $precisionQuantity = 100000;
+                    else if($precisionQuantity == 6) $precisionQuantity = 1000000;
 
-                    // $quantity = round(($freeAsset / $price), $precisionQuantity);
-                    $quantity = $freeAsset;
+                    $quantity = floor($freeAsset * $precisionQuantity) / $precisionQuantity;
+                    // $quantity = round($freeAsset, $precisionQuantity);
+                    // $quantity = $freeAsset;
 
                     echo "freeAsset = " . $freeAsset . "</br>";
                     echo "price = " . $price . "</br>";
@@ -277,7 +288,7 @@ class Ds_bt_spot
             } else echo "We can't get current market price";
         } else echo "Kline returned false";
     }
-
+    
     public function getPrice($symbol, $key, $secret)
     {
 
@@ -291,8 +302,8 @@ class Ds_bt_spot
                 echo "current price is " . $response['price'];
                 echo "</br>";
                 return $response['price'];
-            } else return 0;
-        } else return 0;
+            } else return -1;
+        } else return -1;
     }
     public function kline($symbol, $interval, $key, $secret)
     {
@@ -320,6 +331,8 @@ class Ds_bt_spot
 
             $avarage = ($high + $low) / 2;
             $lowHalfOfAvarage = ($avarage + $low) / 2;
+            $lowHalfOfAvarage = ($lowHalfOfAvarage + $low) / 2; // buy when it comes too low
+
             $HighHalfOfAvarage = ($high + $avarage) / 2;
 
             echo "Low is " . $low . " high is " . $high . "</br>";
