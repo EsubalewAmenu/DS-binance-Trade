@@ -33,16 +33,22 @@ class Ds_bt_spot
         $key = '0red2ruc3xogwntDl658JYQaNJAjx8wRQSbSGILRvjRMeHiGEt9Y3dcqp6X5wHf0';
 
         $symbol = "LUNA";
+        // $symbol = "JASMY";
         // $symbol = "GLMR";
         // $side = "BUY";
         // $quantity = "0.00256";
         // $price = "44090";
-        $interval = "30m";
+        //$interval = "30m";
+        $interval = "1h";
+        //1m3m5m15m30m1h2h4h6h8h12h1d3d1w1M
         // $precisionPrice = 2;
         // $precisionQuantity = 5;//btc
         // $precisionQuantity = 2; //luna
         // $precisionQuantity = 1; //GLMR
         $recvWindow = 50000;
+
+        $tradeType ="normal"; // normal_profit, fixed_profit
+        $fixed_profit_value = 0.001;
 
         global $table_prefix, $wpdb;
 
