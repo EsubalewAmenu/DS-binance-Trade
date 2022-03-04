@@ -62,6 +62,7 @@ class Ds_Binance_Trader_Activator
 			$sql .= "  `buy_id` int(10) unsigned, ";
 			$sql .= "  `profit_loss` varchar(10), "; //p, l
 			$sql .= "  `profit_loss_amount` varchar(10), ";
+			$sql .= "  `market` varchar(10) NOT NULL, ";//SPOT, MARGIN
 
 			$sql .= "  `orderId` varchar(255) NOT NULL, ";
 			$sql .= "  `orderListId` varchar(255) NOT NULL, ";

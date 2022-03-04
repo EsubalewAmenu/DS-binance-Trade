@@ -44,4 +44,23 @@ class DS_bt_admin_base_api
             ));
         });
     }
+
+    function rest_check_margin_trade()
+    {
+        add_action('rest_api_init', function () {
+            register_rest_route(ds_bt . '/v1', '/trade/margin', array(
+                'methods' => 'GET',
+                'callback' => function (WP_REST_Request $request) {
+                    // $tx_hash = $request->get_param('tx_hash');
+
+                    $Ds_bt_margin = new Ds_bt_margin();
+                    $Ds_bt_margin->main();
+                },
+                'permission_callback' => function () {
+                    return true; //current_user_can('edit_others_posts');
+                }
+            ));
+        });
+    }
+    
 }
