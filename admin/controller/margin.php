@@ -40,19 +40,22 @@ class Ds_bt_margin
         $tradeType = "fixed_profit"; // normal_profit, fixed_profit
         $fixed_profit_value = 0.001;
 
-        // self::myMarginAssets($symbol, $interval, $key, $secret);
+        self::myMarginAssets($symbol, $interval, $key, $secret);
 
-        self::getCurrentLoan($key, $secret);
+        // self::getCurrentLoan($key, $secret);
     }
 
     public function getCurrentLoan($key, $secret)
     {
 
-        $query = self::buildQuery([
-            'asset' => "BNB",
-        ]);
+        // $query = self::buildQuery([
+        //     'asset' => "BNB",
+        // ]);
 
-        $response = self::signedRequest('GET', 'sapi/v1/margin/loan', $query, $key, $secret);
+        // $response = self::signedRequest('GET', 'sapi/v1/margin/loan', $query, $key, $secret);
+        $response = self::signedRequest('GET', 'sapi/v1/margin/loan', [
+            'symbol' => "JASMYBUSD"
+        ], $key, $secret);
 
         echo "test start</br>";
         print_r($response);
@@ -68,13 +71,10 @@ class Ds_bt_margin
         //     } else return -1;
         // } else return -1;
     }
+
     public function myMarginAssets($symbol, $interval, $key, $secret)
     {
-        // $currentPrice = self::getCurrentPrice($symbol . "BUSD", $key, $secret);
-        // echo "test";
-        // $klinePrices = self::kline($symbol, $interval, $key, $secret); // price range
-        // print_r($klinePrices);
-        // get account information, make sure API key and secret are set
+        echo "Strarted</br>";
         $response = self::signedRequest('GET', 'sapi/v1/margin/account', [], $key, $secret);
         // echo json_encode($response);
         // echo "end";
@@ -96,7 +96,7 @@ class Ds_bt_margin
 
                     if (!$dbSymbol) {
                         $currentPrice = self::getCurrentPrice($asset['asset'] . "BUSD", $key, $secret); // price range
-                        echo "Current price * free is " . ($asset['free'] * $currentPrice) . " where current price is " . $currentPrice . "</br>";
+                        echo $asset['asset'] . "-Current price * free is " . ($asset['free'] * $currentPrice) . " where current price is " . $currentPrice . "</br>";
 
                         $dbSymbol = $wpdb->get_row("SELECT * FROM " . $wp_ds_table . " WHERE symbol='" . $asset['asset'] . "'");
                         if ($dbSymbol) {
@@ -126,7 +126,7 @@ class Ds_bt_margin
                             $where = ['symbol' => $asset['asset']];
                             $wpdb->update($wp_ds_table, $data, $where);
                         }
-                        echo "sell will be ordered for " . $asset['asset'] . "BUSD";
+                        echo "sell will be ordered for " . $asset['asset'] . "BUSD for " . $asset['free'];
                         self::requestNewOrder($asset['asset'] . "BUSD", "SELL", $asset['free'], $precisionPrice, $precisionQuantity, $interval, $key, $secret);
                     }
                 }
@@ -162,10 +162,17 @@ class Ds_bt_margin
                 // echo "side is " . $side;
                 if ($side == "BUY") {
 
-                    if ($currentPrice > $klinePrices['low']) $price = round($klinePrices['low'], $precisionPrice);
+                    if ($currentPrice > $klinePrices['low']) $price = self::precisionAmount($klinePrices['low'], $precisionPrice);
                     else $price = self::precisionAmount($currentPrice, $precisionPrice);
 
                     $quantity = self::precisionAmount(($freeAsset / $price), $precisionQuantity);
+
+
+                    // echo "currentPrice = " . $currentPrice . "</br>";
+                    // echo "klinePrices['low'] = " . $klinePrices['low'] . "</br>";
+                    // echo "precisionPrice = " . $precisionPrice . "</br>";
+                    // echo "price = " . $price . "</br>";
+
                     self::order($symbol, $side, $type, $quantity, $price, $recvWindow, $key, $secret);
                 } else if ($side == "SELL") {
 
@@ -173,27 +180,38 @@ class Ds_bt_margin
                     else $price = self::precisionAmount($klinePrices['high'], $precisionPrice);
 
                     $quantity = self::precisionAmount($freeAsset, $precisionQuantity);
-                    self::order($symbol, $side, $type, $quantity, $price, $recvWindow, $key, $secret);
+
+
+                    // echo "currentPrice = " . $currentPrice . "</br>";
+                    // echo "klinePrices['low'] = " . $klinePrices['low'] . "</br>";
+                    // echo "precisionPrice = " . $precisionPrice . "</br>";
+                    // echo "price = " . $price . "</br>";
+
+
+                    // self::order($symbol, $side, $type, $quantity, $price, $recvWindow, $key, $secret);
                 }
             } else echo "We can't get current market price";
         } else echo "Kline returned false";
     }
     public function order($symbol, $side, $type, $quantity, $price, $recvWindow, $key, $secret)
     {
-        echo "symbol = " . $symbol . "</br>";
-        echo "price = " . $price . "</br>";
-        echo "quantity = " . $quantity . "</br>";
-        echo "side = " . $side . "</br>";
+        // echo "symbol = " . $symbol . "</br>";
+        // echo "price = " . $price . "</br>";
+        // echo "quantity = " . $quantity . "</br>";
+        // echo "side = " . $side . "</br>";
 
         // place order, make sure API key and secret are set, recommend to test on testnet.
-        // $response = self::signedRequest('POST', 'sapi/v1/margin/order', [
-        //     'symbol' => $symbol,
-        //     'side' => $side,
-        //     'type' => $type,
-        //     'quantity' => $quantity,
-        //     'price' => $price,
-        //     'recvWindow' => $recvWindow,
-        // ], $key, $secret);
+        $response = self::signedRequest('POST', 'sapi/v1/margin/order', [
+            'symbol' => $symbol,
+            'side' => $side,
+            'type' => $type,
+            'quantity' => $quantity,
+            'price' => $price,
+            'recvWindow' => $recvWindow,
+            'timeInForce' => "GTC",
+        ], $key, $secret);
+
+        print_r($response);
 
         // if ($response['code'] == 200 || $response['code'] == 201) {
 
