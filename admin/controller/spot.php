@@ -34,7 +34,7 @@ class Ds_bt_spot
 
         if (isset($_GET['symbol']))
             $symbol = $_GET['symbol'];
-        else        $symbol = "BSW";
+        else        $symbol = "GMT";
 
         echo $symbol;
 
@@ -44,7 +44,7 @@ class Ds_bt_spot
         // $side = "BUY";
         // $quantity = "0.00256";
         // $price = "44090";
-        $buy_interval = "5m";
+        $buy_interval = "3m";
         $sell_interval = "3m";
         //1m3m5m15m30m1h2h4h6h8h12h1d3d1w1M
         // $precisionPrice = 2;
