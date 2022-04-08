@@ -38,6 +38,42 @@ class Ds_Binance_Trader_Activator
 
 		self::ds_bt_trade_table();
 		self::ds_bt_symbol_table();
+		self::ds_bt_settings_create_table();
+	}
+
+	public static function ds_bt_settings_create_table()
+	{
+
+		global $table_prefix, $wpdb;
+
+		$wp_ds_bt_table = $table_prefix . "ds_bt_settings";
+
+		if ($wpdb->get_var("show tables like '$wp_ds_bt_table'") != $wp_ds_bt_table) {
+			$sql = "CREATE TABLE `" . $wp_ds_bt_table . "` ( ";
+			$sql .= "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT, ";
+			$sql .= "  `_key` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL, ";
+			$sql .= "  `value1` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL, ";
+			$sql .= "  `value2` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL, ";
+
+			$sql .= "  `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP, ";
+			$sql .= "  `updated_at` TIMESTAMP NULL DEFAULT NULL, ";
+			$sql .= "  `deleted_at` TIMESTAMP NULL DEFAULT NULL, ";
+
+			$sql .= "  PRIMARY KEY (`id`) ";
+			$sql .= ") ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ; ";
+
+			dbDelta($sql);
+
+			$sql = "INSERT INTO " . $wp_ds_bt_table . " (`_key`, `value1`, `value2`) VALUES ";
+			$sql .= "('symbols_last_updated', '02-02-22', ''),";
+			$sql .= "('api_owner', 'maedotesuba', ''),";
+			$sql .= "('api_secret', 'tSicM8dB17cncJzmKt4PnGxMh1OXE8aIBnbMnyEnayVNlXpgJhLKjqTZlXZp7yDO', ''),";
+			$sql .= "('api_key', '0red2ruc3xogwntDl658JYQaNJAjx8wRQSbSGILRvjRMeHiGEt9Y3dcqp6X5wHf0', ''),";
+			$sql .= "('recvWindow', '50000', '')";
+			// $sql .= "('', '', ''),";
+
+			dbDelta($sql);
+		}
 	}
 
 	public static function ds_bt_trade_table()
@@ -45,10 +81,10 @@ class Ds_Binance_Trader_Activator
 
 		global $table_prefix, $wpdb;
 
-		$wp_xcc_table = $table_prefix . "ds_bt_trades";
+		$wp_ds_bt_table = $table_prefix . "ds_bt_trades";
 
-		if ($wpdb->get_var("show tables like '$wp_xcc_table'") != $wp_xcc_table) {
-			$sql = "CREATE TABLE `" . $wp_xcc_table . "` ( ";
+		if ($wpdb->get_var("show tables like '$wp_ds_bt_table'") != $wp_ds_bt_table) {
+			$sql = "CREATE TABLE `" . $wp_ds_bt_table . "` ( ";
 			$sql .= "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT, ";
 
 			$sql .= "  `symbol` varchar(10) NOT NULL, ";
@@ -62,7 +98,7 @@ class Ds_Binance_Trader_Activator
 			$sql .= "  `buy_id` int(10) unsigned, ";
 			$sql .= "  `profit_loss` varchar(10), "; //p, l
 			$sql .= "  `profit_loss_amount` varchar(10), ";
-			$sql .= "  `market` varchar(10) NOT NULL, ";//SPOT, MARGIN
+			$sql .= "  `market` varchar(10) NOT NULL, "; //SPOT, MARGIN
 
 			$sql .= "  `orderId` varchar(255) NOT NULL, ";
 			$sql .= "  `orderListId` varchar(255) NOT NULL, ";
@@ -86,17 +122,24 @@ class Ds_Binance_Trader_Activator
 
 		global $table_prefix, $wpdb;
 
-		$wp_xcc_table = $table_prefix . "ds_bt_symbols";
+		$wp_ds_bt_table = $table_prefix . "ds_bt_symbols";
 
-		if ($wpdb->get_var("show tables like '$wp_xcc_table'") != $wp_xcc_table) {
-			$sql = "CREATE TABLE `" . $wp_xcc_table . "` ( ";
+		if ($wpdb->get_var("show tables like '$wp_ds_bt_table'") != $wp_ds_bt_table) {
+			$sql = "CREATE TABLE `" . $wp_ds_bt_table . "` ( ";
 			$sql .= "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT, ";
 
 			$sql .= "  `symbol` varchar(10) NOT NULL, ";
 			$sql .= "  `precisionPrice`  int(10) NOT NULL, ";
 			$sql .= "  `precisionQuantity`  int(10) NOT NULL, ";
-			$sql .= "  `is_available_on_margin`  int(10) NOT NULL, ";
-			$sql .= "  `market_price` varchar(50) NOT NULL, ";
+
+			$sql .= "  `isSpotTradingAllowed` BOOLEAN, ";
+			$sql .= "  `isMarginTradingAllowed` BOOLEAN, ";
+			$sql .= "  `min_lot_size` varchar(20) NOT NULL, ";
+			$sql .= "  `permissions` varchar(50) NOT NULL, ";
+			$sql .= "  `lastPrice` varchar(20) NOT NULL, ";
+			$sql .= "  `asset_volume` varchar(20) NOT NULL, ";
+			$sql .= "  `busd_volume` varchar(20) NOT NULL, ";
+
 
 			$sql .= "  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ";
 			$sql .= "  `updated_at` TIMESTAMP NULL DEFAULT NULL, ";
