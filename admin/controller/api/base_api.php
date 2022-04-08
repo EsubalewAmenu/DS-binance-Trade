@@ -52,8 +52,7 @@ class DS_bt_admin_base_api
                 'callback' => function (WP_REST_Request $request) {
                     // $tx_hash = $request->get_param('tx_hash');
                     $Ds_bt_holder = new Ds_bt_holder();
-                    echo "testasdf";
-                    // $Ds_bt_holder->main();
+                    $Ds_bt_holder->main();
                 },
                 'permission_callback' => function () {
                     return true; //current_user_can('edit_others_posts');
