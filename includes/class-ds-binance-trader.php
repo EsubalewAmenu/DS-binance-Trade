@@ -121,6 +121,7 @@ class Ds_Binance_Trader
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/controller/buysell.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/controller/common.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/controller/spot.php';
+		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/controller/holder.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/controller/margin.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/controller/api/base_api.php';
 
@@ -175,42 +176,43 @@ class Ds_Binance_Trader
 		$DS_bt_admin_base_api = new DS_bt_admin_base_api();
 		$this->loader->add_action('rest_api_init', $DS_bt_admin_base_api, 'rest_check_trade', 1, 1);
 		$this->loader->add_action('rest_api_init', $DS_bt_admin_base_api, 'rest_check_margin_trade', 1, 1);
+		$this->loader->add_action('rest_api_init', $DS_bt_admin_base_api, 'rest_check_hold', 1, 1);
 
 
-		function ds_bt_check_schedule($schedules)
-		{
-			$length = 60;
+		// function ds_bt_check_schedule($schedules)
+		// {
+		// 	$length = 60;
 
-			if (!isset($schedules["ds_bt_check_schedule"])) {
-				$schedules["ds_bt_check_schedule"] = array(
-					'interval' =>  $length,
-					'display' => __('Once every 2 minutes')
-				);
-			}
-			return $schedules;
-		}
-		add_filter('cron_schedules', 'ds_bt_check_schedule');
-
-		if (!wp_next_scheduled('ds_bt_check_schedule_task_hook')) {
-			// echo "wp_next_scheduled('ds_bt_check_schedule_task_hook') was not seted";
-			wp_schedule_event(time(), 'ds_bt_check_schedule', 'ds_bt_check_schedule_task_hook');
-		}
-		// else
-		// echo "wp_next_scheduled('ds_bt_check_schedule_task_hook') was seted";
-
-		add_action('ds_bt_check_schedule_task_hook', 'ds_bt_check_schedule_task_hook_function');
-
-
-		//reset scheduled
-		// if (array_key_exists('submit_xcc_admin_settings', $_POST)) {
-		// 	wp_clear_scheduled_hook('ds_bt_check_schedule_task_hook');
+		// 	if (!isset($schedules["ds_bt_check_schedule"])) {
+		// 		$schedules["ds_bt_check_schedule"] = array(
+		// 			'interval' =>  $length,
+		// 			'display' => __('Once every 2 minutes')
+		// 		);
+		// 	}
+		// 	return $schedules;
 		// }
+		// add_filter('cron_schedules', 'ds_bt_check_schedule');
 
-		function ds_bt_check_schedule_task_hook_function()
-		{
-			$Ds_bt_spot = new Ds_bt_spot();
-			$Ds_bt_spot->main();
-		}
+		// if (!wp_next_scheduled('ds_bt_check_schedule_task_hook')) {
+		// 	// echo "wp_next_scheduled('ds_bt_check_schedule_task_hook') was not seted";
+		// 	wp_schedule_event(time(), 'ds_bt_check_schedule', 'ds_bt_check_schedule_task_hook');
+		// }
+		// // else
+		// // echo "wp_next_scheduled('ds_bt_check_schedule_task_hook') was seted";
+
+		// add_action('ds_bt_check_schedule_task_hook', 'ds_bt_check_schedule_task_hook_function');
+
+
+		// //reset scheduled
+		// // if (array_key_exists('submit_xcc_admin_settings', $_POST)) {
+		// // 	wp_clear_scheduled_hook('ds_bt_check_schedule_task_hook');
+		// // }
+
+		// function ds_bt_check_schedule_task_hook_function()
+		// {
+		// 	$Ds_bt_spot = new Ds_bt_spot();
+		// 	$Ds_bt_spot->main();
+		// }
 	}
 
 	/**
@@ -231,13 +233,13 @@ class Ds_Binance_Trader
 
 		//  node api call
 
-// 		const axios = require('axios');
-// const get = async () => {
-//     axios.get('https://dashencon.com/tezt/wp-json/ds_bt/v1/trade/spot').then(res => {
-//         console.log(res.data);
-//     })
-// }
-// setInterval(get, 4000)
+		// 		const axios = require('axios');
+		// const get = async () => {
+		//     axios.get('https://dashencon.com/tezt/wp-json/ds_bt/v1/trade/spot').then(res => {
+		//         console.log(res.data);
+		//     })
+		// }
+		// setInterval(get, 4000)
 	}
 
 	/**
