@@ -40,6 +40,23 @@ class Ds_bt_common
 		return 50000;
 	}
 
+	public function order($symbol, $side, $type, $quantity, $price, $recvWindow, $key, $secret)
+	{
+		// place order, make sure API key and secret are set, recommend to test on testnet.
+		$response = self::signedRequest('POST', 'api/v3/order', [
+			'symbol' => $symbol,
+			'side' => $side,
+			'type' => $type,
+			'timeInForce' => 'GTC',
+			'quantity' => $quantity,
+			'price' => $price,
+			'recvWindow' => $recvWindow,
+			// 'newClientOrderId' => 'my_order', // optional
+			'newOrderRespType' => 'FULL' //optional
+		], $key, $secret);
+
+		return $response;
+	}
 	public function kline($symbol, $interval, $last_n_history, $key, $secret)
 	{
 		$query = self::buildQuery([
@@ -65,8 +82,6 @@ class Ds_bt_common
 			$response = json_decode($response['result'], true);
 
 			if (isset($response['price'])) {
-				// echo "current price is " . $response['price'];
-				// echo "</br>";
 				return $response['price'];
 			} else return -1;
 		} else return -1;

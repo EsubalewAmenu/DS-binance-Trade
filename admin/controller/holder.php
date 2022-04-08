@@ -44,8 +44,15 @@ class Ds_bt_holder
         // $wp_ds_table = $table_prefix . "ds_bt_trades";
         // $orderList = $wpdb->get_results("SELECT * FROM " . $wp_ds_table . " WHERE status='NEW'");
 
-        // once a day
-        // sendRequest("GET", "api/v1/exchangeInfo", $key); - update the symbols db.table
+        // once a day (by checking last_market_update from setting)
+        // {
+        // sendRequest("GET", "api/v3/exchangeInfo", $key); - update the symbols db.table
+        // {\"symbol\":\"BTCBUSD\",\"status\":\"TRADING\",\"baseAsset\":\"BTC\",\"baseAssetPrecision\":8,\"quoteAsset\":\"BUSD\",\"quotePrecision\":8,\"quoteAssetPrecision\":8,\"baseCommissionPrecision\":8,\"quoteCommissionPrecision\":8,\"orderTypes\":[\"LIMIT\",\"LIMIT_MAKER\",\"MARKET\",\"STOP_LOSS_LIMIT\",\"TAKE_PROFIT_LIMIT\"],\"icebergAllowed\":true,\"ocoAllowed\":true,\"quoteOrderQtyMarketAllowed\":true,\"allowTrailingStop\":false,\"isSpotTradingAllowed\":true,\"isMarginTradingAllowed\":true,\"filters\":[{\"filterType\":\"PRICE_FILTER\",\"minPrice\":\"0.01000000\",\"maxPrice\":\"1000000.00000000\",\"tickSize\":\"0.01000000\"},{\"filterType\":\"PERCENT_PRICE\",\"multiplierUp\":\"5\",\"multiplierDown\":\"0.2\",\"avgPriceMins\":5},{\"filterType\":\"LOT_SIZE\",\"minQty\":\"0.00001000\",\"maxQty\":\"9000.00000000\",\"stepSize\":\"0.00001000\"},{\"filterType\":\"MIN_NOTIONAL\",\"minNotional\":\"10.00000000\",\"applyToMarket\":true,\"avgPriceMins\":5},{\"filterType\":\"ICEBERG_PARTS\",\"limit\":10},{\"filterType\":\"MARKET_LOT_SIZE\",\"minQty\":\"0.00000000\",\"maxQty\":\"54.87502179\",\"stepSize\":\"0.00000000\"},{\"filterType\":\"MAX_NUM_ORDERS\",\"maxNumOrders\":200},{\"filterType\":\"MAX_NUM_ALGO_ORDERS\",\"maxNumAlgoOrders\":5}],\"permissions\":[\"SPOT\",\"MARGIN\"]}
+
+        // $response = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/ticker/24hr", $key);
+        // use the above for coin volume, last(current) price and volume
+        // {\"symbol\":\"BTCBUSD\",\"priceChange\":\"-312.04000000\",\"priceChangePercent\":\"-0.714\",\"weightedAvgPrice\":\"43553.61473197\",\"prevClosePrice\":\"43714.29000000\",\"lastPrice\":\"43402.25000000\",\"lastQty\":\"0.70452000\",\"bidPrice\":\"43400.00000000\",\"bidQty\":\"1.65713000\",\"askPrice\":\"43400.01000000\",\"askQty\":\"2.83788000\",\"openPrice\":\"43714.29000000\",\"highPrice\":\"43976.00000000\",\"lowPrice\":\"43022.10000000\",\"volume\":\"9727.78533000\",\"quoteVolume\":\"423680214.45817280\",\"openTime\":1649331645109,\"closeTime\":1649418045109,\"firstId\":331821409,\"lastId\":332157741,\"count\":336333}
+        // }
 
 
         self::myAccount($interval, $priceToTradeOnSingleCoin, $depend_on_last_n_history, $key, $secret, $recvWindow);
@@ -59,83 +66,108 @@ class Ds_bt_holder
         // $GLOBALS['Ds_bt_common']->kline($symbol, $interval, $last_n_history, $key, $secret) - get last n +2 coin history
         // sendRequest("GET", "api/v3/ticker/24hr?symbol=BTCBUSD", $key); - current price, get 24 hrs market volume (coin volume * lastPrice)
 
-        $response = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v1/exchangeInfo", $key);
-        echo json_encode($response);
-
-        $response['code'] = 0;
+        // $response = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/ticker/price", $key);
+        // $response = $GLOBALS['Ds_bt_common']->kline("BTCBUSD", $interval, $depend_on_last_n_history, $key, $secret);
+        // $response = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/ticker/24hr", $key);
         // $response = $GLOBALS['Ds_bt_common']->signedRequest('GET', 'api/v3/account', [], $key, $secret);
+        // $response = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/exchangeInfo", $key);
+        // $response = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/depth?symbol=WAVESBUSD&limit=5", $key); // get orderbook (BUY)
+
+
         // echo json_encode($response);
+
+        $response = $GLOBALS['Ds_bt_common']->signedRequest('GET', 'api/v3/account', [], $key, $secret);
+        echo json_encode($response);
 
         if ($response['code'] == 200 || $response['code'] == 201) {
             $response = json_decode($response['result'], true);
 
             global $table_prefix, $wpdb;
-            $wp_ds_table = $table_prefix . "ds_bt_symbols";
+            $wp_ds_bt_symbols_table = $table_prefix . "ds_bt_symbols";
 
             foreach ($response['balances'] as $asset) {
 
 
                 if ($asset['asset'] != "BUSD") {
-                    //             echo "there is " . $asset['free'] . " free " . $asset['asset'] . " </br>/n";
-
-                    //             $dbSymbol = $wpdb->get_row("SELECT * FROM " . $wp_ds_table . " WHERE symbol='" . $asset['asset'] . "' and market_price!='-1'");
-
-                    //             if (!$dbSymbol) {
-                    //                 $currentPrice = self::getPrice($asset['asset'] . "BUSD", $key, $secret); // price range
-                    //                 // echo "Current price * free is " . ($asset['free'] * $currentPrice) . " where current price is " . $currentPrice . "</br>";
-
-                    //                 $dbSymbol = $wpdb->get_row("SELECT * FROM " . $wp_ds_table . " WHERE symbol='" . $asset['asset'] . "'");
-                    //                 if ($dbSymbol) {
-                    //                     $data = ['market_price' => $currentPrice];
-                    //                     $where = ['symbol' => $asset['asset']];
-                    //                     $wpdb->update($wp_ds_table, $data, $where);
-                    //                 } else {
-                    //                     $wpdb->insert($wp_ds_table, array(
-                    //                         'symbol' => $asset['asset'],
-                    //                         'precisionPrice' => 10,
-                    //                         'precisionQuantity' => 10,
-                    //                         'is_available_on_margin' => "3",
-                    //                         'market_price' => $currentPrice,
-
-                    //                     ));
-                    //                 }
-                    //             } else $currentPrice = $dbSymbol->market_price;
-                    //             $precisionPrice = $dbSymbol->precisionPrice;
-                    //             $precisionQuantity = $dbSymbol->precisionQuantity;
-
-                    //             if (($asset['free'] * $currentPrice) > 13) {
-
-                    //                 // 
-                    //                 echo "Current price * free is " . ($asset['free'] * $currentPrice) . " where current price is " . $currentPrice . "</br>/n";
-                    //                 // 
-
-
-
-                    //                 $currentPrice = self::getPrice($asset['asset'] . "BUSD", $key, $secret); // price range
-                    //                 if ($currentPrice != -1) {
-                    //                     $data = ['market_price' => $currentPrice];
-                    //                     $where = ['symbol' => $asset['asset']];
-                    //                     $wpdb->update($wp_ds_table, $data, $where);
-                    //                 }
-                    //                 echo "sell will be ordered for " . $asset['asset'] . "BUSD";
-                    //                 self::requestNewOrder($asset['asset'] . "BUSD", "SELL", $asset['free'], $precisionPrice, $precisionQuantity, $buy_interval, $sell_interval, $key, $secret);
-                    //             }
+                    self::checkAndSellCoin($asset, $interval, $depend_on_last_n_history, $key, $secret, $recvWindow);
                 } else if ($asset['asset'] == "BUSD") {
                     // if last order time greater than interval - cancel
+                    self::buyAndHoldCoin($asset, $interval, $depend_on_last_n_history, $key, $secret, $recvWindow);
+                }
+            }
+        }
+    }
+    public function checkAndSellCoin($asset, $interval, $depend_on_last_n_history, $key, $secret, $recvWindow)
+    {
+        echo "there is " . $asset['free'] . " free " . $asset['asset'] . " </br>/n";
 
-                    //             $dbSymbol = $wpdb->get_row("SELECT * FROM " . $wp_ds_table . " WHERE symbol='" . $symbol . "' and market_price!='-1'");
+        global $table_prefix, $wpdb;
+        $wp_ds_bt_symbols_table = $table_prefix . "ds_bt_symbols";
 
-                    //             $precisionPrice = $dbSymbol->precisionPrice;
-                    //             $precisionQuantity = $dbSymbol->precisionQuantity;
+        $dbSymbol = $wpdb->get_row("SELECT * FROM " . $wp_ds_bt_symbols_table . " WHERE symbol='" . $asset['asset'] . "' and market_price > 0");
 
+        if ($dbSymbol) {
+            $currentPrice = $dbSymbol->market_price;
+            // $precisionPrice = $dbSymbol->precisionPrice;
+            // $precisionQuantity = $dbSymbol->precisionQuantity;
 
-                    //             echo "current BUSD is " . $asset['free'] . ' precisionPrice ' . $precisionPrice . ' precisionQuantity ' . $precisionQuantity . ' symbol ' . $symbol;
-                    //             echo "</br>";
+            if (($asset['free'] * $currentPrice) > 11) {
+                $coinHistories = $GLOBALS['Ds_bt_common']->kline($asset['asset'] . "BUSD", $interval, $depend_on_last_n_history, $key, $secret);
+                $last_n_loss_count = 0;
+                $loss_count = 0;
+                $bought_price = 0; // should get bought price first
+                for ($i = 0; $i < count($coinHistories); $i++) {
 
-                    //             $asset['free'] = $asset['free'] - (($asset['free'] * 0.5) / 100);
+                    // if($coinHistories[$i] was loss){ 
+                    //     $loss_count++
+                    // if($i<$depend_on_last_n_history)
+                    // $last_n_loss_count++;
+                    // }
+                }
+                if (($last_n_loss_count >= $depend_on_last_n_history ||
+                    $loss_count >= ($depend_on_last_n_history + 1)) && $currentPrice > $bought_price) {
+                    // order sell with last price from book order
+                } else if ($currentPrice < $bought_price && $last_n_loss_count >= 1) {
+                    // order sell with bought price from book order
+                }
+            }
+        }
+    }
+    public function buyAndHoldCoin($asset, $interval, $depend_on_last_n_history, $key, $secret, $recvWindow)
+    {
+        global $table_prefix, $wpdb;
+        $wp_ds_bt_symbols_table = $table_prefix . "ds_bt_symbols";
 
-                    //             if ($asset['free'] > 13) self::requestNewOrder($symbol . $asset['asset'], "BUY", $asset['free'], $precisionPrice, $precisionQuantity, $buy_interval, $sell_interval, $key, $secret);
-                    //             // return $asset['free'];
+        if ($asset['free'] > 11) {
+
+            $symbolLists = $wpdb->get_results("SELECT * FROM " . $wp_ds_bt_symbols_table . " WHERE volume > 10 million");
+            foreach ($symbolLists as $symbolList) {
+                // get coin list from db where volume > 10 min and symbol != BUSD
+                $coinHistories = $GLOBALS['Ds_bt_common']->kline($symbolList->symbol . "BUSD", $interval, $depend_on_last_n_history, $key, $secret);
+
+                if ($coinHistories < $depend_on_last_n_history)
+                    break;
+                $profit_count = 0;
+                for ($i = 0; $i < $depend_on_last_n_history; $i++) {
+
+                    //close price - open price
+                    if ($coinHistories[$i][1] - $coinHistories[$i][4] > 0) { // if it's positive 
+                        $profit_count++;
+                    }
+                }
+
+                $currentPrice = $GLOBALS['Ds_bt_common']->getPrice($asset['asset'] . "BUSD", $key, $secret); // price range
+
+                if ($profit_count == $depend_on_last_n_history && $currentPrice > $coinHistories[0]) {
+                    $orderBook = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/depth?symbol=WAVESBUSD&limit=5", $key); // get orderbook (BUY)
+                    if ($orderBook['code'] == 200 || $orderBook['code'] == 201) {
+                        $lastOnOrderBook = json_decode($orderBook['result'], true)->bids[0][0];
+                        $freeAsset = $asset['free'] - ($asset['free'] % $lastOnOrderBook);
+                        $type = "LIMIT";
+                        $price = json_decode($orderBook['result'], true)->bids[0][0];
+                        $quantity =  $freeAsset / $symbolList->min_slot;
+                        $GLOBALS['Ds_bt_common']->order($symbolList->symbol . "BUSD", "BUY", $type, $quantity, $price, $recvWindow, $key, $secret);
+                    }
                 }
             }
         }
