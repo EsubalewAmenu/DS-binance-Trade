@@ -41,7 +41,7 @@ class Ds_bt_holder
         //1m3m5m15m30m1h2h4h6h8h12h1d3d1w1M
 
         if ($GLOBALS['Ds_bt_common']->isSymbolsUpdated($key)) {
-            // self::myAccount($interval, $priceToTradeOnSingleCoin, $depend_on_last_n_history, $key, $secret, $recvWindow);
+            self::myAccount($interval, $priceToTradeOnSingleCoin, $depend_on_last_n_history, $key, $secret, $recvWindow);
         }
     }
 
@@ -57,32 +57,28 @@ class Ds_bt_holder
         // $response = $GLOBALS['Ds_bt_common']->kline("BTCBUSD", $interval, $depend_on_last_n_history, $key, $secret);
         // $response = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/ticker/24hr", $key);
         // $response = $GLOBALS['Ds_bt_common']->signedRequest('GET', 'api/v3/account', [], $key, $secret);
-        $response = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/exchangeInfo", $key);
+        // $response = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/exchangeInfo", $key);
         // $response = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/depth?symbol=WAVESBUSD&limit=5", $key); // get orderbook (BUY)
 
 
-        echo json_encode($response);
-
-        // $response = $GLOBALS['Ds_bt_common']->signedRequest('GET', 'api/v3/account', [], $key, $secret);
         // echo json_encode($response);
 
-        // if ($response['code'] == 200 || $response['code'] == 201) {
-        //     $response = json_decode($response['result'], true);
+        $response = $GLOBALS['Ds_bt_common']->signedRequest('GET', 'api/v3/account', [], $key, $secret);
+        // echo json_encode($response);
 
-        //     global $table_prefix, $wpdb;
-        //     $wp_ds_bt_symbols_table = $table_prefix . "ds_bt_symbols";
+        if ($response['code'] == 200 || $response['code'] == 201) {
+            $response = json_decode($response['result'], true);
 
-        //     foreach ($response['balances'] as $asset) {
+            foreach ($response['balances'] as $asset) {
 
-
-        //         if ($asset['asset'] != "BUSD") {
-        //             self::checkAndSellCoin($asset, $interval, $depend_on_last_n_history, $key, $secret, $recvWindow);
-        //         } else if ($asset['asset'] == "BUSD") {
-        //             // if last order time greater than interval - cancel
-        //             self::buyAndHoldCoin($asset, $interval, $depend_on_last_n_history, $key, $secret, $recvWindow);
-        //         }
-        //     }
-        // }
+                if ($asset['asset'] != "BUSD") {
+                    self::checkAndSellCoin($asset, $interval, $depend_on_last_n_history, $key, $secret, $recvWindow);
+                } else if ($asset['asset'] == "BUSD") {
+                    // if last order time greater than interval - cancel
+                    self::buyAndHoldCoin($asset, $interval, $depend_on_last_n_history, $key, $secret, $recvWindow);
+                }
+            }
+        }
     }
     public function checkAndSellCoin($asset, $interval, $depend_on_last_n_history, $key, $secret, $recvWindow)
     {

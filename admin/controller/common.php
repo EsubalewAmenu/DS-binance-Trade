@@ -37,7 +37,7 @@ class Ds_bt_common
 
 	public function recvWindow()
 	{
-		return 50000;
+		return 60000;
 	}
 
 	public function order($symbol, $side, $type, $quantity, $price, $recvWindow, $key, $secret)
@@ -102,7 +102,7 @@ class Ds_bt_common
 
 											'lastPrice' => $ticker['lastPrice'],
 											'asset_volume' => $ticker['volume'],
-											'busd_volume' => $ticker['volume'] * $ticker['lastPrice'],
+											'busd_volume' => $ticker['quoteVolume'],
 											'priceChange' => $ticker['priceChange'],
 											'priceChangePercent' => $ticker['priceChangePercent'],
 										];
@@ -121,7 +121,7 @@ class Ds_bt_common
 
 											'lastPrice' => $ticker['lastPrice'],
 											'asset_volume' => $ticker['volume'],
-											'busd_volume' => $ticker['volume'] * $ticker['lastPrice'],
+											'busd_volume' => $ticker['quoteVolume'],
 											'priceChange' => $ticker['priceChange'],
 											'priceChangePercent' => $ticker['priceChangePercent'],
 
