@@ -56,7 +56,7 @@ class Ds_Binance_Trader_Activator
 			$sql .= "  `value2` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL, ";
 
 			$sql .= "  `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP, ";
-			$sql .= "  `updated_at` TIMESTAMP NULL DEFAULT NULL, ";
+			$sql .= "  `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, ";
 			$sql .= "  `deleted_at` TIMESTAMP NULL DEFAULT NULL, ";
 
 			$sql .= "  PRIMARY KEY (`id`) ";
@@ -107,7 +107,7 @@ class Ds_Binance_Trader_Activator
 
 
 			$sql .= "  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ";
-			$sql .= "  `updated_at` TIMESTAMP NULL DEFAULT NULL, ";
+			$sql .= "  `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, ";
 			$sql .= "  `deleted_at` TIMESTAMP NULL DEFAULT NULL, ";
 
 			$sql .= "  PRIMARY KEY (`id`) ";
@@ -142,7 +142,7 @@ class Ds_Binance_Trader_Activator
 
 
 			$sql .= "  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ";
-			$sql .= "  `updated_at` TIMESTAMP NULL DEFAULT NULL, ";
+			$sql .= "  `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, ";
 			$sql .= "  `deleted_at` TIMESTAMP NULL DEFAULT NULL, ";
 
 			$sql .= "  PRIMARY KEY (`id`) ";
