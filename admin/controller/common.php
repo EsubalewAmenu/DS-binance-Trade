@@ -57,6 +57,92 @@ class Ds_bt_common
 
 		return $response;
 	}
+	function isSymbolsUpdated($key)
+	{
+		global $table_prefix, $wpdb;
+		$wp_ds_bt_settings_table = $table_prefix . "ds_bt_settings";
+		$wp_ds_bt_symbols_table = $table_prefix . "ds_bt_symbols";
+		$setting = $wpdb->get_row("SELECT * FROM " . $wp_ds_bt_settings_table . ' WHERE _key="symbols_last_updated"');
+		if ($setting) {
+			if ($setting->value1 != date("d-m-y")) {
+				// once a day (by checking symbols_last_updated from setting)
+				// {
+				$exchangeInfos = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/exchangeInfo", $key);
+				$tickers = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/ticker/24hr", $key);
+
+				if (($exchangeInfos['code'] == 200 || $exchangeInfos['code'] == 201) && ($tickers['code'] == 200 || $tickers['code'] == 201)) {
+					$exchangeInfos = json_decode($exchangeInfos['result'], true);
+					$tickers = json_decode($tickers['result'], true);
+
+					// $count = 0;
+					foreach ($exchangeInfos['symbols'] as $symbol) {
+						if ($symbol['quoteAsset'] == 'BUSD') {
+
+							foreach ($tickers as $ticker) {
+								if ($ticker['symbol'] == $symbol['symbol']) {
+
+									$baseAsset = $wpdb->get_row("SELECT * FROM " . $wp_ds_bt_symbols_table . ' WHERE symbol="' . $symbol['baseAsset'] . '"');
+
+									$min_lot_size = 0;
+									foreach ($symbol['filters'] as $filter) {
+										if ($filter['filterType'] == "PERCENT_PRICE")
+											$precisionQuantity = $filter['multiplierUp'];
+										else if ($filter['filterType'] == "LOT_SIZE")
+											$min_lot_size = $filter['minQty'];
+									}
+
+									if ($baseAsset) { //update
+										$data = [
+											'precisionPrice' => -1,
+											'precisionQuantity' => $precisionQuantity,
+											'isSpotTradingAllowed' => $symbol['isSpotTradingAllowed'],
+											'isMarginTradingAllowed' => $symbol['isMarginTradingAllowed'],
+											'min_lot_size' => $min_lot_size,
+											// 'permissions' => implode(" ",$symbol['permissions']),
+
+											'lastPrice' => $ticker['lastPrice'],
+											'asset_volume' => $ticker['volume'],
+											'busd_volume' => $ticker['volume'] * $ticker['lastPrice'],
+											'priceChange' => $ticker['priceChange'],
+											'priceChangePercent' => $ticker['priceChangePercent'],
+										];
+										$where = ['symbol' => $symbol['baseAsset']];
+										$wpdb->update($wp_ds_bt_symbols_table, $data, $where);
+									} else { //insert
+
+										$wpdb->insert($wp_ds_bt_symbols_table, array(
+											'symbol' => $symbol['baseAsset'],
+											'precisionPrice' => -1,
+											'precisionQuantity' => $precisionQuantity,
+											'isSpotTradingAllowed' => $symbol['isSpotTradingAllowed'],
+											'isMarginTradingAllowed' => $symbol['isMarginTradingAllowed'],
+											'min_lot_size' => $min_lot_size,
+											// 'permissions' => implode(" ",$symbol['permissions']),
+
+											'lastPrice' => $ticker['lastPrice'],
+											'asset_volume' => $ticker['volume'],
+											'busd_volume' => $ticker['volume'] * $ticker['lastPrice'],
+											'priceChange' => $ticker['priceChange'],
+											'priceChangePercent' => $ticker['priceChangePercent'],
+
+										));
+									}
+								}
+							}
+						}
+					}
+					$data = ['value1' => date("d-m-y")];
+					$where = ['_key' => "symbols_last_updated"];
+					$wpdb->update($wp_ds_bt_settings_table, $data, $where);
+				}
+				return 1;
+			} else //if ($setting->value1 == date("d-m-y")) 
+			{
+				return 1;
+			}
+		}
+		return 0;
+	}
 	public function kline($symbol, $interval, $last_n_history, $key, $secret)
 	{
 		$query = self::buildQuery([

@@ -135,11 +135,13 @@ class Ds_Binance_Trader_Activator
 			$sql .= "  `isSpotTradingAllowed` BOOLEAN, ";
 			$sql .= "  `isMarginTradingAllowed` BOOLEAN, ";
 			$sql .= "  `min_lot_size` varchar(20) NOT NULL, ";
-			$sql .= "  `permissions` varchar(50) NOT NULL, ";
+			$sql .= "  `permissions` varchar(50) NULL, ";
 			$sql .= "  `lastPrice` varchar(20) NOT NULL, ";
 			$sql .= "  `asset_volume` varchar(20) NOT NULL, ";
 			$sql .= "  `busd_volume` varchar(20) NOT NULL, ";
-
+			$sql .= "  `priceChange` varchar(20) NOT NULL, ";
+			$sql .= "  `priceChangePercent` varchar(20) NOT NULL, ";
+			
 
 			$sql .= "  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ";
 			$sql .= "  `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, ";
