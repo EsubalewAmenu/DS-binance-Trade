@@ -46,26 +46,34 @@ class Ds_bt_holder
         $setting = $wpdb->get_row("SELECT * FROM " . $wp_ds_bt_settings_table . ' WHERE _key="symbols_last_updated"');
         if ($setting) {
             if ($setting->value1 != date("d-m-y")) {
-                echo "price expired should be updated :) setting=" . $setting->value1 . " != " . date("d-m-y");
+                // echo "price expired should be updated :) setting=" . $setting->value1 . " != " . date("d-m-y");
 
                 // once a day (by checking symbols_last_updated from setting)
                 // {
-                $response = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/exchangeInfo", $key);
+                $exchangeInfos = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/exchangeInfo", $key);
+                $tickers = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/ticker/24hr", $key);
 
-                if ($response['code'] == 200 || $response['code'] == 201) {
-                    $response = json_decode($response['result'], true);
-                    foreach ($response->symbols as $symbol) {
-                        if (str_ends_with($symbol->symbol, 'BUSD')) {
-                            $ticker = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/ticker/24hr?symbol=" . $symbol->quoteAsset . "BUSD", $key);
+                // print_r($tickers);
 
-                            $quoteAsset = $wpdb->get_row("SELECT * FROM " . $wp_ds_bt_symbols_table . ' WHERE symbol="' . $symbol->quoteAsset . '"');
-                            if ($quoteAsset) { //update
+                if (($exchangeInfos['code'] == 200 || $exchangeInfos['code'] == 201) && ($tickers['code'] == 200 || $tickers['code'] == 201)) {
+                    $exchangeInfos = json_decode($exchangeInfos['result'], true);
+                    $tickers = json_decode($tickers['result'], true);
+
+                    // $count = 0;
+                    foreach ($exchangeInfos['symbols'] as $symbol) {
+                        if ($symbol['quoteAsset'] == 'BUSD') {
+                            // $count++;
+                            // echo "symbol " . $symbol['baseAsset'] . " found (id=" . $count . ")!</br>/n";
+
+
+                            $baseAsset = $wpdb->get_row("SELECT * FROM " . $wp_ds_bt_symbols_table . ' WHERE symbol="' . $symbol['baseAsset'] . '"');
+                            if ($baseAsset) { //update
                                 // $data = ['market_price' => $currentPrice];
                                 // $where = ['symbol' => $asset['asset']];
                                 // $wpdb->update($wp_ds_table, $data, $where);
                             } else { //insert
                                 $$min_lot_size = 0;
-                                foreach ($symbol->filters as $filter) {
+                                foreach ($symbol['filters'] as $filter) {
                                     if ($filter->filterType == "PERCENT_PRICE")
                                         $precisionQuantity = $filter->multiplierUp;
 
@@ -74,13 +82,13 @@ class Ds_bt_holder
                                 }
 
                                 $wpdb->insert($wp_ds_bt_symbols_table, array(
-                                    'symbol' => $symbol->quoteAsset,
+                                    'symbol' => $symbol['baseAsset'],
                                     'precisionPrice' => -1,
                                     'precisionQuantity' => $precisionQuantity,
-                                    'isSpotTradingAllowed' => $symbol->isSpotTradingAllowed,
-                                    'isMarginTradingAllowed' => $symbol->isMarginTradingAllowed,
+                                    'isSpotTradingAllowed' => $symbol['isSpotTradingAllowed'],
+                                    'isMarginTradingAllowed' => $symbol['isMarginTradingAllowed'],
                                     'min_lot_size' => $min_lot_size,
-                                    'permissions' => $symbol->permissions,
+                                    'permissions' => $symbol['permissions'],
 
                                     'lastPrice' => $ticker->lastPrice,
                                     'asset_volume' => $ticker->volume,
@@ -88,30 +96,35 @@ class Ds_bt_holder
 
                                 ));
                             }
-                            // sendRequest("GET", "api/v3/exchangeInfo", $key); - update the symbols db.table
-                            // {\"symbol\":\"BTCBUSD\",\"status\":\"TRADING\",\"baseAsset\":\"BTC\",\"baseAssetPrecision\":8,\"quoteAsset\":\"BUSD\",\"quotePrecision\":8,\"quoteAssetPrecision\":8,\"baseCommissionPrecision\":8,\"quoteCommissionPrecision\":8,\"orderTypes\":[\"LIMIT\",\"LIMIT_MAKER\",\"MARKET\",\"STOP_LOSS_LIMIT\",\"TAKE_PROFIT_LIMIT\"],\"icebergAllowed\":true,\"ocoAllowed\":true,\"quoteOrderQtyMarketAllowed\":true,\"allowTrailingStop\":false,\"isSpotTradingAllowed\":true,\"isMarginTradingAllowed\":true,\
-
-                            //     "filters\":[
-                            //{\"filterType\":\"PRICE_FILTER\",\"minPrice\":\"0.01000000\",\"maxPrice\":\"1000000.00000000\",\"tickSize\":\"0.01000000\"},
-                            // {\"filterType\":\"PERCENT_PRICE\",\"multiplierUp\":\"5\",\"multiplierDown\":\"0.2\",\"avgPriceMins\":5},{\"filterType\":\"LOT_SIZE\",\"minQty\":\"0.00001000\",\"maxQty\":\"9000.00000000\",\"stepSize\":\"0.00001000\"},
-                            //{\"filterType\":\"MIN_NOTIONAL\",\"minNotional\":\"10.00000000\",\"applyToMarket\":true,\"avgPriceMins\":5},{\"filterType\":\"ICEBERG_PARTS\",\"limit\":10},
-                            //{\"filterType\":\"MARKET_LOT_SIZE\",\"minQty\":\"0.00000000\",\"maxQty\":\"54.87502179\",\"stepSize\":\"0.00000000\"},
-                            // {\"filterType\":\"MAX_NUM_ORDERS\",\"maxNumOrders\":200},
-                            // {\"filterType\":\"MAX_NUM_ALGO_ORDERS\",\"maxNumAlgoOrders\":5}]
-
-                            // ,\"permissions\":[\"SPOT\",\"MARGIN\"]}
-
-                            // $response = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/ticker/24hr", $key);
-                            // use the above for coin volume, last(current) price and volume
-                            // {\"symbol\":\"BTCBUSD\",\"priceChange\":\"-312.04000000\",\"priceChangePercent\":\"-0.714\",\"weightedAvgPrice\":\"43553.61473197\",\"prevClosePrice\":\"43714.29000000\",\"lastPrice\":\"43402.25000000\",\"lastQty\":\"0.70452000\",\"bidPrice\":\"43400.00000000\",\"bidQty\":\"1.65713000\",\"askPrice\":\"43400.01000000\",\"askQty\":\"2.83788000\",\"openPrice\":\"43714.29000000\",\"highPrice\":\"43976.00000000\",\"lowPrice\":\"43022.10000000\",\"volume\":\"9727.78533000\",\"quoteVolume\":\"423680214.45817280\",\"openTime\":1649331645109,\"closeTime\":1649418045109,\"firstId\":331821409,\"lastId\":332157741,\"count\":336333}
-                            // }
                         }
+                        //             // sendRequest("GET", "api/v3/exchangeInfo", $key); - update the symbols db.table
+                        //             // {\"symbol\":\"BTCBUSD\",\"status\":\"TRADING\",\"baseAsset\":\"BTC\",\"baseAssetPrecision\":8,\"quoteAsset\":\"BUSD\",\"quotePrecision\":8,\"quoteAssetPrecision\":8,\"baseCommissionPrecision\":8,\"quoteCommissionPrecision\":8,\"orderTypes\":[\"LIMIT\",\"LIMIT_MAKER\",\"MARKET\",\"STOP_LOSS_LIMIT\",\"TAKE_PROFIT_LIMIT\"],\"icebergAllowed\":true,\"ocoAllowed\":true,\"quoteOrderQtyMarketAllowed\":true,\"allowTrailingStop\":false,\"isSpotTradingAllowed\":true,\"isMarginTradingAllowed\":true,\
+
+                        //             //     "filters\":[
+                        //             //{\"filterType\":\"PRICE_FILTER\",\"minPrice\":\"0.01000000\",\"maxPrice\":\"1000000.00000000\",\"tickSize\":\"0.01000000\"},
+                        //             // {\"filterType\":\"PERCENT_PRICE\",\"multiplierUp\":\"5\",\"multiplierDown\":\"0.2\",\"avgPriceMins\":5},{\"filterType\":\"LOT_SIZE\",\"minQty\":\"0.00001000\",\"maxQty\":\"9000.00000000\",\"stepSize\":\"0.00001000\"},
+                        //             //{\"filterType\":\"MIN_NOTIONAL\",\"minNotional\":\"10.00000000\",\"applyToMarket\":true,\"avgPriceMins\":5},{\"filterType\":\"ICEBERG_PARTS\",\"limit\":10},
+                        //             //{\"filterType\":\"MARKET_LOT_SIZE\",\"minQty\":\"0.00000000\",\"maxQty\":\"54.87502179\",\"stepSize\":\"0.00000000\"},
+                        //             // {\"filterType\":\"MAX_NUM_ORDERS\",\"maxNumOrders\":200},
+                        //             // {\"filterType\":\"MAX_NUM_ALGO_ORDERS\",\"maxNumAlgoOrders\":5}]
+
+                        //             // ,\"permissions\":[\"SPOT\",\"MARGIN\"]}
+
+                        //             // $response = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/ticker/24hr", $key);
+                        //             // use the above for coin volume, last(current) price and volume
+                        //             // {\"symbol\":\"BTCBUSD\",\"priceChange\":\"-312.04000000\",\"priceChangePercent\":\"-0.714\",\"weightedAvgPrice\":\"43553.61473197\",\"prevClosePrice\":\"43714.29000000\",\"lastPrice\":\"43402.25000000\",\"lastQty\":\"0.70452000\",\"bidPrice\":\"43400.00000000\",\"bidQty\":\"1.65713000\",\"askPrice\":\"43400.01000000\",\"askQty\":\"2.83788000\",\"openPrice\":\"43714.29000000\",\"highPrice\":\"43976.00000000\",\"lowPrice\":\"43022.10000000\",\"volume\":\"9727.78533000\",\"quoteVolume\":\"423680214.45817280\",\"openTime\":1649331645109,\"closeTime\":1649418045109,\"firstId\":331821409,\"lastId\":332157741,\"count\":336333}
+                        //             // }
+                        //         }
+                        //     }
+                        // }
+                        // $data = ['value1' => date("d-m-y")];
+                        // $where = ['_key' => "symbols_last_updated"];
+                        // $wpdb->update($wp_ds_bt_settings_table, $data, $where);
+                        // self::myAccount($interval, $priceToTradeOnSingleCoin, $depend_on_last_n_history, $key, $secret, $recvWindow);
+
+
                     }
                 }
-                // $data = ['value1' => date("d-m-y")];
-                // $where = ['_key' => "symbols_last_updated"];
-                // $wpdb->update($wp_ds_bt_settings_table, $data, $where);
-                // self::myAccount($interval, $priceToTradeOnSingleCoin, $depend_on_last_n_history, $key, $secret, $recvWindow);
             }
             if ($setting->value1 == date("d-m-y")) {
                 // self::myAccount($interval, $priceToTradeOnSingleCoin, $depend_on_last_n_history, $key, $secret, $recvWindow);
