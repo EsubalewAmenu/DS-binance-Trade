@@ -65,36 +65,40 @@ class Ds_bt_holder
                             // $count++;
                             // echo "symbol " . $symbol['baseAsset'] . " found (id=" . $count . ")!</br>/n";
 
+                            foreach ($tickers as $ticker) {
+                                if ($ticker['symbol'] == $symbol['symbol']) {
 
-                            $baseAsset = $wpdb->get_row("SELECT * FROM " . $wp_ds_bt_symbols_table . ' WHERE symbol="' . $symbol['baseAsset'] . '"');
-                            if ($baseAsset) { //update
-                                // $data = ['market_price' => $currentPrice];
-                                // $where = ['symbol' => $asset['asset']];
-                                // $wpdb->update($wp_ds_table, $data, $where);
-                            } else { //insert
-                                $$min_lot_size = 0;
-                                foreach ($symbol['filters'] as $filter) {
-                                    if ($filter->filterType == "PERCENT_PRICE")
-                                        $precisionQuantity = $filter->multiplierUp;
+                                    $baseAsset = $wpdb->get_row("SELECT * FROM " . $wp_ds_bt_symbols_table . ' WHERE symbol="' . $symbol['baseAsset'] . '"');
+                                    if ($baseAsset) { //update
+                                        $data = ['market_price' => $ticker['lastPrice']];
+                                        $where = ['symbol' => $symbol['baseAsset']];
+                                        $wpdb->update($wp_ds_bt_symbols_table, $data, $where);
+                                    } else { //insert
+                                        $min_lot_size = 0;
+                                        foreach ($symbol['filters'] as $filter) {
+                                            if ($filter['filterType'] == "PERCENT_PRICE")
+                                                $precisionQuantity = $filter['multiplierUp'];
 
-                                    if ($filter->filterType == "LOT_SIZE")
-                                        $min_lot_size = $filter->minQty;
+                                            if ($filter['filterType'] == "LOT_SIZE")
+                                                $min_lot_size = $filter['minQty'];
+                                        }
+
+                                        $wpdb->insert($wp_ds_bt_symbols_table, array(
+                                            'symbol' => $symbol['baseAsset'],
+                                            'precisionPrice' => -1,
+                                            'precisionQuantity' => $precisionQuantity,
+                                            'isSpotTradingAllowed' => $symbol['isSpotTradingAllowed'],
+                                            'isMarginTradingAllowed' => $symbol['isMarginTradingAllowed'],
+                                            'min_lot_size' => $min_lot_size,
+                                            'permissions' => $symbol['permissions'],
+
+                                            'lastPrice' => $ticker['lastPrice'],
+                                            'asset_volume' => $ticker['volume'],
+                                            'busd_volume' => $ticker['volume'] * $ticker['lastPrice'],
+
+                                        ));
+                                    }
                                 }
-
-                                $wpdb->insert($wp_ds_bt_symbols_table, array(
-                                    'symbol' => $symbol['baseAsset'],
-                                    'precisionPrice' => -1,
-                                    'precisionQuantity' => $precisionQuantity,
-                                    'isSpotTradingAllowed' => $symbol['isSpotTradingAllowed'],
-                                    'isMarginTradingAllowed' => $symbol['isMarginTradingAllowed'],
-                                    'min_lot_size' => $min_lot_size,
-                                    'permissions' => $symbol['permissions'],
-
-                                    'lastPrice' => $ticker->lastPrice,
-                                    'asset_volume' => $ticker->volume,
-                                    'busd_volume' => $ticker->volume * $ticker->lastPrice,
-
-                                ));
                             }
                         }
                         //             // sendRequest("GET", "api/v3/exchangeInfo", $key); - update the symbols db.table
