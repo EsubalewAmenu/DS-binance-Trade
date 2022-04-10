@@ -148,7 +148,7 @@ class Ds_bt_common
 		$query = self::buildQuery([
 			'symbol' => $symbol,
 			'interval' => $interval,
-			'limit' => $last_n_history + 2
+			'limit' => $last_n_history
 		]);
 
 		$response = self::sendRequest("GET", "api/v3/klines?${query}", $key);
@@ -156,7 +156,7 @@ class Ds_bt_common
 		if ($response['code'] == 200 || $response['code'] == 201) {
 
 			return json_decode($response['result'], true);
-		} else return null;
+		} else return array('error'=>'45632');
 	}
 	public function getPrice($symbol, $key, $secret)
 	{

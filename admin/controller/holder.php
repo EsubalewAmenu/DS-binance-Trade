@@ -37,7 +37,7 @@ class Ds_bt_holder
         $priceToTradeOnSingleCoin = 15;
         $depend_on_last_n_history = 2;
         $trade_coin_volume = 5000000;
-
+        $GLOBALS['kline_last_n_history'] = $depend_on_last_n_history + 3;
         $interval = "5m";
         //1m3m5m15m30m1h2h4h6h8h12h1d3d1w1M
 
@@ -73,9 +73,9 @@ class Ds_bt_holder
             foreach ($response['balances'] as $asset) {
 
                 // if last order time greater than interval - cancel
-                   
+
                 if ($asset['asset'] != "BUSD") {
-                    self::checkAndSellCoin($asset, $interval, $depend_on_last_n_history, $key, $secret, $recvWindow);
+                    // self::checkAndSellCoin($asset, $interval, $depend_on_last_n_history, $key, $secret, $recvWindow);
                 } else if ($asset['asset'] == "BUSD") {
                     $asset['free'] = 20;
                     self::buyAndHoldCoin($asset, $interval, $depend_on_last_n_history, $trade_coin_volume, $key, $secret, $recvWindow);
@@ -85,7 +85,7 @@ class Ds_bt_holder
     }
     public function checkAndSellCoin($asset, $interval, $depend_on_last_n_history, $key, $secret, $recvWindow)
     {
-        echo "there is " . $asset['free'] . " free " . $asset['asset'] . " </br>/n";
+        // echo "there is " . $asset['free'] . " free " . $asset['asset'] . " </br>/n";
 
         global $table_prefix, $wpdb;
         $wp_ds_bt_symbols_table = $table_prefix . "ds_bt_symbols";
@@ -126,34 +126,53 @@ class Ds_bt_holder
 
             global $table_prefix, $wpdb;
             $wp_ds_bt_symbols_table = $table_prefix . "ds_bt_symbols";
-    
-            $symbolLists = $wpdb->get_results("SELECT * FROM " . $wp_ds_bt_symbols_table . " WHERE busd_volume > ".$trade_coin_volume. ' and symbol!="BUSD" order by priceChangePercent desc');
+            //             $coinHistories = $GLOBALS['Ds_bt_common']->kline("BALBUSD", $interval, $GLOBALS['kline_last_n_history'], $key, $secret);
+            // print_r($coinHistories);    
+            // $symbolLists = $wpdb->get_results("SELECT * FROM " . $wp_ds_bt_symbols_table . " WHERE busd_volume > ".$trade_coin_volume. ' and symbol="SHIB" order by priceChangePercent asc');
+            $symbolLists = $wpdb->get_results("SELECT * FROM " . $wp_ds_bt_symbols_table . " WHERE busd_volume > " . $trade_coin_volume . ' and symbol!="BUSD" order by priceChangePercent asc');
             foreach ($symbolLists as $symbolList) {
-                $coinHistories = $GLOBALS['Ds_bt_common']->kline($symbolList->symbol . "BUSD", $interval, $depend_on_last_n_history, $key, $secret);
+                try {
+                    //code...
+                    $coinHistories = $GLOBALS['Ds_bt_common']->kline($symbolList->symbol . "BUSD", $interval, $GLOBALS['kline_last_n_history'], $key, $secret);
+                    // print_r($coinHistories);
+                    if (count($coinHistories) < $GLOBALS['kline_last_n_history'])
+                        break;
+                    $profit_count = 0;
+                    // $lastPrice = $GLOBALS['Ds_bt_common']->getPrice($asset['asset'] . "BUSD", $key, $secret); // price range
+                    $lastPrice = $coinHistories[$GLOBALS['kline_last_n_history'] - 1][4];
+                    $i = $GLOBALS['kline_last_n_history'] - 1; //including last price
+                    $countHistory = 0;
+                    while ($countHistory <= $depend_on_last_n_history) {
 
-                if ($coinHistories < $depend_on_last_n_history)
-                    break;
-                $profit_count = 0;
-                for ($i = 0; $i < $depend_on_last_n_history; $i++) {
-
-                    //close price - open price
-                    if ($coinHistories[$i][1] - $coinHistories[$i][4] > 0) { // if it's positive 
-                        $profit_count++;
+                        //close price - open price
+                        if ($coinHistories[$i][4] - $coinHistories[$i][1] > 0) { // if it's positive 
+                            $profit_count++;
+                        }
+                        $i--;
+                        $countHistory++;
                     }
-                }
 
-                $lastPrice = $GLOBALS['Ds_bt_common']->getPrice($asset['asset'] . "BUSD", $key, $secret); // price range
+                    echo '{' . $symbolList->symbol . " profit_count is " . $profit_count . ' lastPrice is ' . $lastPrice . '}, ';
 
-                if ($profit_count == $depend_on_last_n_history && $lastPrice > $coinHistories[0]) {
-                    $orderBook = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/depth?symbol=WAVESBUSD&limit=5", $key); // get orderbook (BUY)
-                    if ($orderBook['code'] == 200 || $orderBook['code'] == 201) {
-                        $lastOnOrderBook = json_decode($orderBook['result'], true)->bids[0][0];
-                        $freeAsset = $asset['free'] - ($asset['free'] % $lastOnOrderBook);
-                        $type = "LIMIT";
-                        $price = json_decode($orderBook['result'], true)->bids[0][0];
-                        $quantity =  $freeAsset / $symbolList->min_slot;
-                        $GLOBALS['Ds_bt_common']->order($symbolList->symbol . "BUSD", "BUY", $type, $quantity, $price, $recvWindow, $key, $secret);
+                    if ($profit_count == ($depend_on_last_n_history + 1)) { //including last price
+                        echo ' its profiting';
+                        print_r($coinHistories);
+
+                        break;
+                        // $orderBook = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/depth?symbol=".$symbolList->symbol."BUSD&limit=5", $key); // get orderbook (BUY)
+                        // if ($orderBook['code'] == 200 || $orderBook['code'] == 201) {
+                        //     $lastOnOrderBook = json_decode($orderBook['result'], true)->bids[0][0];
+                        //     $freeAsset = $asset['free'] - ($asset['free'] % $lastOnOrderBook);
+                        //     $type = "LIMIT";
+                        //     $price = json_decode($orderBook['result'], true)->bids[0][0];
+                        //     $quantity =  $freeAsset / $symbolList->min_slot;
+                        //     $GLOBALS['Ds_bt_common']->order($symbolList->symbol . "BUSD", "BUY", $type, $quantity, $price, $recvWindow, $key, $secret);
+                        // }
                     }
+                } catch (\Throwable $th) {
+                    //throw $th;
+                    echo 'error on ' . $symbolList->symbol;
+                    print_r($coinHistories);
                 }
             }
         }
