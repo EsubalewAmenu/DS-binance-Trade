@@ -159,6 +159,7 @@ class Ds_bt_holder
                         print_r($coinHistories);
 
                         break;
+                        // to remove orderBook api call, order by current price - minium allowed order price ($symbolList->precisionPrice from db)
                         // $orderBook = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/depth?symbol=".$symbolList->symbol."BUSD&limit=5", $key); // get orderbook (BUY)
                         // if ($orderBook['code'] == 200 || $orderBook['code'] == 201) {
                         //     $lastOnOrderBook = json_decode($orderBook['result'], true)->bids[0][0];

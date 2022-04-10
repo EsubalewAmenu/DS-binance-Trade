@@ -85,19 +85,20 @@ class Ds_bt_common
 
 									$min_lot_size = 0;
 									foreach ($symbol['filters'] as $filter) {
-										if ($filter['filterType'] == "PERCENT_PRICE")
-											$precisionQuantity = $filter['multiplierUp'];
+										if ($filter['filterType'] == "PRICE_FILTER")
+											$precisionPrice = $filter['minPrice'];
 										else if ($filter['filterType'] == "LOT_SIZE")
 											$min_lot_size = $filter['minQty'];
+										// else if ($filter['filterType'] == "PERCENT_PRICE")
+										// $precisionQuantity = $filter['multiplierUp'];
 									}
 
 									if ($baseAsset) { //update
 										$data = [
-											'precisionPrice' => -1,
-											'precisionQuantity' => $precisionQuantity,
+											'precisionPrice' => $precisionPrice,
+											'min_lot_size' => $min_lot_size,
 											'isSpotTradingAllowed' => $symbol['isSpotTradingAllowed'],
 											'isMarginTradingAllowed' => $symbol['isMarginTradingAllowed'],
-											'min_lot_size' => $min_lot_size,
 											// 'permissions' => implode(" ",$symbol['permissions']),
 
 											'lastPrice' => $ticker['lastPrice'],
@@ -112,11 +113,10 @@ class Ds_bt_common
 
 										$wpdb->insert($wp_ds_bt_symbols_table, array(
 											'symbol' => $symbol['baseAsset'],
-											'precisionPrice' => -1,
-											'precisionQuantity' => $precisionQuantity,
+											'precisionPrice' => $precisionPrice,
+											'min_lot_size' => $min_lot_size,
 											'isSpotTradingAllowed' => $symbol['isSpotTradingAllowed'],
 											'isMarginTradingAllowed' => $symbol['isMarginTradingAllowed'],
-											'min_lot_size' => $min_lot_size,
 											// 'permissions' => implode(" ",$symbol['permissions']),
 
 											'lastPrice' => $ticker['lastPrice'],
@@ -156,7 +156,7 @@ class Ds_bt_common
 		if ($response['code'] == 200 || $response['code'] == 201) {
 
 			return json_decode($response['result'], true);
-		} else return array('error'=>'45632');
+		} else return array('error' => '45632');
 	}
 	public function getPrice($symbol, $key, $secret)
 	{

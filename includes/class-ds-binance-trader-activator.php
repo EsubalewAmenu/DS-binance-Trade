@@ -129,12 +129,11 @@ class Ds_Binance_Trader_Activator
 			$sql .= "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT, ";
 
 			$sql .= "  `symbol` varchar(10) NOT NULL, ";
-			$sql .= "  `precisionPrice`  int(10) NOT NULL, ";
-			$sql .= "  `precisionQuantity`  int(10) NOT NULL, ";
 
+			$sql .= "  `precisionPrice`  DECIMAL(16,8) NOT NULL, ";
+			$sql .= "  `min_lot_size`  DECIMAL(16,8) NOT NULL, ";
 			$sql .= "  `isSpotTradingAllowed` BOOLEAN, ";
 			$sql .= "  `isMarginTradingAllowed` BOOLEAN, ";
-			$sql .= "  `min_lot_size`  DECIMAL(16,8) NOT NULL, ";
 			$sql .= "  `permissions` varchar(50) NULL, ";
 			$sql .= "  `lastPrice`  DECIMAL(16,8) NOT NULL, ";
 			$sql .= "  `asset_volume`  DECIMAL(16,8) NOT NULL, ";
