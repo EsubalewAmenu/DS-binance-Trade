@@ -36,16 +36,17 @@ class Ds_bt_holder
 
         $priceToTradeOnSingleCoin = 15;
         $depend_on_last_n_history = 2;
+        $trade_coin_volume = 5000000;
 
         $interval = "5m";
         //1m3m5m15m30m1h2h4h6h8h12h1d3d1w1M
 
         if ($GLOBALS['Ds_bt_common']->isSymbolsUpdated($key)) {
-            self::myAccount($interval, $priceToTradeOnSingleCoin, $depend_on_last_n_history, $key, $secret, $recvWindow);
+            self::myAccount($interval, $priceToTradeOnSingleCoin, $depend_on_last_n_history, $trade_coin_volume, $key, $secret, $recvWindow);
         }
     }
 
-    public function myAccount($interval, $priceToTradeOnSingleCoin, $depend_on_last_n_history, $key, $secret, $recvWindow)
+    public function myAccount($interval, $priceToTradeOnSingleCoin, $depend_on_last_n_history, $trade_coin_volume, $key, $secret, $recvWindow)
     {
         // https://github.com/binance/binance-spot-api-docs/blob/master/rest-api.md
 
@@ -71,11 +72,13 @@ class Ds_bt_holder
 
             foreach ($response['balances'] as $asset) {
 
+                // if last order time greater than interval - cancel
+                   
                 if ($asset['asset'] != "BUSD") {
                     self::checkAndSellCoin($asset, $interval, $depend_on_last_n_history, $key, $secret, $recvWindow);
                 } else if ($asset['asset'] == "BUSD") {
-                    // if last order time greater than interval - cancel
-                    self::buyAndHoldCoin($asset, $interval, $depend_on_last_n_history, $key, $secret, $recvWindow);
+                    $asset['free'] = 20;
+                    self::buyAndHoldCoin($asset, $interval, $depend_on_last_n_history, $trade_coin_volume, $key, $secret, $recvWindow);
                 }
             }
         }
@@ -116,16 +119,16 @@ class Ds_bt_holder
             }
         }
     }
-    public function buyAndHoldCoin($asset, $interval, $depend_on_last_n_history, $key, $secret, $recvWindow)
+    public function buyAndHoldCoin($asset, $interval, $depend_on_last_n_history, $trade_coin_volume, $key, $secret, $recvWindow)
     {
-        global $table_prefix, $wpdb;
-        $wp_ds_bt_symbols_table = $table_prefix . "ds_bt_symbols";
 
         if ($asset['free'] > 11) {
 
-            $symbolLists = $wpdb->get_results("SELECT * FROM " . $wp_ds_bt_symbols_table . " WHERE volume > 10 million");
+            global $table_prefix, $wpdb;
+            $wp_ds_bt_symbols_table = $table_prefix . "ds_bt_symbols";
+    
+            $symbolLists = $wpdb->get_results("SELECT * FROM " . $wp_ds_bt_symbols_table . " WHERE busd_volume > ".$trade_coin_volume. ' and symbol!="BUSD" order by priceChangePercent desc');
             foreach ($symbolLists as $symbolList) {
-                // get coin list from db where volume > 10 min and symbol != BUSD
                 $coinHistories = $GLOBALS['Ds_bt_common']->kline($symbolList->symbol . "BUSD", $interval, $depend_on_last_n_history, $key, $secret);
 
                 if ($coinHistories < $depend_on_last_n_history)

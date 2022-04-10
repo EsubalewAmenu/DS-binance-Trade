@@ -92,12 +92,12 @@ class Ds_Binance_Trader_Activator
 			$sql .= "  `side` varchar(10) NOT NULL, ";
 			$sql .= "  `type` varchar(10) NOT NULL, ";
 			$sql .= "  `quantity` DECIMAL(16,8) NOT NULL, ";
-			$sql .= "  `price` varchar(50) NOT NULL, ";
+			$sql .= "  `price`  DECIMAL(16,8) NOT NULL, ";
 
 			$sql .= "  `status` varchar(10) NOT NULL, "; //NEW,
 			$sql .= "  `buy_id` int(10) unsigned, ";
 			$sql .= "  `profit_loss` varchar(10), "; //p, l
-			$sql .= "  `profit_loss_amount` varchar(10), ";
+			$sql .= "  `profit_loss_amount`  DECIMAL(16,8), ";
 			$sql .= "  `market` varchar(10) NOT NULL, "; //SPOT, MARGIN
 
 			$sql .= "  `orderId` varchar(255) NOT NULL, ";
@@ -134,13 +134,13 @@ class Ds_Binance_Trader_Activator
 
 			$sql .= "  `isSpotTradingAllowed` BOOLEAN, ";
 			$sql .= "  `isMarginTradingAllowed` BOOLEAN, ";
-			$sql .= "  `min_lot_size` varchar(50) NOT NULL, ";
+			$sql .= "  `min_lot_size`  DECIMAL(16,8) NOT NULL, ";
 			$sql .= "  `permissions` varchar(50) NULL, ";
-			$sql .= "  `lastPrice` varchar(50) NOT NULL, ";
-			$sql .= "  `asset_volume` varchar(50) NOT NULL, ";
-			$sql .= "  `busd_volume` varchar(50) NOT NULL, ";
-			$sql .= "  `priceChange` varchar(50) NOT NULL, ";
-			$sql .= "  `priceChangePercent` varchar(50) NOT NULL, ";
+			$sql .= "  `lastPrice`  DECIMAL(16,8) NOT NULL, ";
+			$sql .= "  `asset_volume`  DECIMAL(16,8) NOT NULL, ";
+			$sql .= "  `busd_volume`  DECIMAL(16,8) NOT NULL, ";
+			$sql .= "  `priceChange`  DECIMAL(16,8) NOT NULL, ";
+			$sql .= "  `priceChangePercent`  DECIMAL(16,8) NOT NULL, ";
 			
 
 			$sql .= "  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ";
