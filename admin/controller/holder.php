@@ -36,9 +36,9 @@ class Ds_bt_holder
 
         $priceToTradeOnSingleCoin = 15;
         $depend_on_last_n_history = 2;
-        $trade_coin_volume = 5000000;
+        $trade_coin_volume = 3000000;
         $GLOBALS['kline_last_n_history'] = $depend_on_last_n_history + 3;
-        $interval = "5m";
+        $interval = "15m";
         //1m3m5m15m30m1h2h4h6h8h12h1d3d1w1M
 
         if ($GLOBALS['Ds_bt_common']->isSymbolsUpdated($key)) {
@@ -110,6 +110,10 @@ class Ds_bt_holder
                     // $last_n_loss_count++;
                     // }
                 }
+                // if prevous or current loss > 0.6 % - sell
+                // if n loss out of n+1 - sell
+
+
                 if (($last_n_loss_count >= $depend_on_last_n_history ||
                     $loss_count >= ($depend_on_last_n_history + 1)) && $lastPrice > $bought_price) {
                     // order sell with last price from book order
@@ -128,8 +132,8 @@ class Ds_bt_holder
             $wp_ds_bt_symbols_table = $table_prefix . "ds_bt_symbols";
             //             $coinHistories = $GLOBALS['Ds_bt_common']->kline("BALBUSD", $interval, $GLOBALS['kline_last_n_history'], $key, $secret);
             // print_r($coinHistories);    
-            // $symbolLists = $wpdb->get_results("SELECT * FROM " . $wp_ds_bt_symbols_table . " WHERE busd_volume > ".$trade_coin_volume. ' and symbol="SHIB" order by priceChangePercent asc');
-            $symbolLists = $wpdb->get_results("SELECT * FROM " . $wp_ds_bt_symbols_table . " WHERE busd_volume > " . $trade_coin_volume . ' and symbol!="BUSD" order by priceChangePercent asc');
+            // $symbolLists = $wpdb->get_results("SELECT * FROM " . $wp_ds_bt_symbols_table . " WHERE busd_volume > ".$trade_coin_volume. ' and symbol="SHIB" order by priceChangePercent desc');
+            $symbolLists = $wpdb->get_results("SELECT * FROM " . $wp_ds_bt_symbols_table . " WHERE busd_volume > " . $trade_coin_volume . ' and symbol!="BUSD" order by priceChangePercent desc');
             foreach ($symbolLists as $symbolList) {
                 try {
                     //code...
@@ -152,13 +156,14 @@ class Ds_bt_holder
                         $countHistory++;
                     }
 
-                    echo '{' . $symbolList->symbol . " profit_count is " . $profit_count . ' lastPrice is ' . $lastPrice . '}, ';
 
                     if ($profit_count == ($depend_on_last_n_history + 1)) { //including last price
-                        echo ' its profiting';
-                        print_r($coinHistories);
+                    echo '{' . $symbolList->symbol . " profiting. busd_volume " . $symbolList->busd_volume. ' 24h% '.$symbolList->priceChangePercent.' lastPrice is ' . $lastPrice . '}, ';
 
-                        break;
+                        // echo ' its profiting';
+                        // print_r($coinHistories);
+                        // break;
+
                         // to remove orderBook api call, order by current price - minium allowed order price ($symbolList->precisionPrice from db)
                         // $orderBook = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/depth?symbol=".$symbolList->symbol."BUSD&limit=5", $key); // get orderbook (BUY)
                         // if ($orderBook['code'] == 200 || $orderBook['code'] == 201) {
