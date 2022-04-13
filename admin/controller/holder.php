@@ -139,8 +139,8 @@ class Ds_bt_holder
                     //code...
                     $coinHistories = $GLOBALS['Ds_bt_common']->kline($symbolList->symbol . "BUSD", $interval, $GLOBALS['kline_last_n_history'], $key, $secret);
                     // print_r($coinHistories);
-                    if (count($coinHistories) < $GLOBALS['kline_last_n_history'])
-                        break;
+                    if (count($coinHistories) >= $GLOBALS['kline_last_n_history']){
+                        // break;
                     $profit_count = 0;
                     // $lastPrice = $GLOBALS['Ds_bt_common']->getPrice($asset['asset'] . "BUSD", $key, $secret); // price range
                     $lastPrice = $coinHistories[$GLOBALS['kline_last_n_history'] - 1][4];
@@ -175,6 +175,7 @@ class Ds_bt_holder
                         //     $GLOBALS['Ds_bt_common']->order($symbolList->symbol . "BUSD", "BUY", $type, $quantity, $price, $recvWindow, $key, $secret);
                         // }
                     }
+                }
                 } catch (\Throwable $th) {
                     //throw $th;
                     echo 'error on ' . $symbolList->symbol;
