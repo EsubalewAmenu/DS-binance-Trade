@@ -122,6 +122,7 @@ class Ds_Binance_Trader
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/controller/common.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/controller/spot.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/controller/holder.php';
+		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/controller/tradingview.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/controller/margin.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/controller/api/base_api.php';
 
@@ -177,6 +178,7 @@ class Ds_Binance_Trader
 		$this->loader->add_action('rest_api_init', $DS_bt_admin_base_api, 'rest_check_trade', 1, 1);
 		$this->loader->add_action('rest_api_init', $DS_bt_admin_base_api, 'rest_check_margin_trade', 1, 1);
 		$this->loader->add_action('rest_api_init', $DS_bt_admin_base_api, 'rest_check_hold', 1, 1);
+		$this->loader->add_action('rest_api_init', $DS_bt_admin_base_api, 'rest_check_tradingview', 1, 1);
 
 
 		// function ds_bt_check_schedule($schedules)

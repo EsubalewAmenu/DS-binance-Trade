@@ -78,4 +78,19 @@ class DS_bt_admin_base_api
             ));
         });
     }
+    function rest_check_tradingview()
+    {
+        add_action('rest_api_init', function () {
+            register_rest_route(ds_bt . '/v1', '/tradingview/spot', array(
+                'methods' => 'GET',
+                'callback' => function (WP_REST_Request $request) {
+                    $Ds_bt_tradingview = new Ds_bt_tradingview();
+                    $Ds_bt_tradingview->main();
+                },
+                'permission_callback' => function () {
+                    return true; //current_user_can('edit_others_posts');
+                }
+            ));
+        });
+    }
 }

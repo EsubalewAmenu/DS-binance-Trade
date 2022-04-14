@@ -24,10 +24,10 @@ class Ds_bt_tradingview
 {
 
 
-// get strong buys from trading view
-// buy
-//check if my coin is on sell
-// sell
+    // get strong buys from trading view
+    // buy
+    //check if my coin is on sell
+    // sell
 
 
 
@@ -42,20 +42,27 @@ class Ds_bt_tradingview
 
     public function main()
     {
-        $secret = $GLOBALS['Ds_bt_common']->api_secret();
-        $key = $GLOBALS['Ds_bt_common']->api_key();
-        $recvWindow = $GLOBALS['Ds_bt_common']->recvWindow();
 
-        $priceToTradeOnSingleCoin = 15;
-        $depend_on_last_n_history = 2;
-        $trade_coin_volume = 3000000;
-        $GLOBALS['kline_last_n_history'] = $depend_on_last_n_history + 3;
-        $interval = "15m";
-        //1m3m5m15m30m1h2h4h6h8h12h1d3d1w1M
 
-        if ($GLOBALS['Ds_bt_common']->isSymbolsUpdated($key)) {
-            self::myAccount($interval, $priceToTradeOnSingleCoin, $depend_on_last_n_history, $trade_coin_volume, $key, $secret, $recvWindow);
-        }
+        // $cmd = "python3 /home/esubalew/Desktop/tezt.py ";
+        $cmd = "python3 " . ds_bt_PLAGIN_DIR . 'admin/controller/recommendation/ta.py';
+        $output = shell_exec($cmd);
+        echo $output;
+
+        // $secret = $GLOBALS['Ds_bt_common']->api_secret();
+        // $key = $GLOBALS['Ds_bt_common']->api_key();
+        // $recvWindow = $GLOBALS['Ds_bt_common']->recvWindow();
+
+        // $priceToTradeOnSingleCoin = 15;
+        // $depend_on_last_n_history = 2;
+        // $trade_coin_volume = 3000000;
+        // $GLOBALS['kline_last_n_history'] = $depend_on_last_n_history + 3;
+        // $interval = "15m";
+        // //1m3m5m15m30m1h2h4h6h8h12h1d3d1w1M
+
+        // if ($GLOBALS['Ds_bt_common']->isSymbolsUpdated($key)) {
+        //     self::myAccount($interval, $priceToTradeOnSingleCoin, $depend_on_last_n_history, $trade_coin_volume, $key, $secret, $recvWindow);
+        // }
     }
 
     public function myAccount($interval, $priceToTradeOnSingleCoin, $depend_on_last_n_history, $trade_coin_volume, $key, $secret, $recvWindow)
@@ -151,43 +158,43 @@ class Ds_bt_tradingview
                     //code...
                     $coinHistories = $GLOBALS['Ds_bt_common']->kline($symbolList->symbol . "BUSD", $interval, $GLOBALS['kline_last_n_history'], $key, $secret);
                     // print_r($coinHistories);
-                    if (count($coinHistories) >= $GLOBALS['kline_last_n_history']){
+                    if (count($coinHistories) >= $GLOBALS['kline_last_n_history']) {
                         // break;
-                    $profit_count = 0;
-                    // $lastPrice = $GLOBALS['Ds_bt_common']->getPrice($asset['asset'] . "BUSD", $key, $secret); // price range
-                    $lastPrice = $coinHistories[$GLOBALS['kline_last_n_history'] - 1][4];
-                    $i = $GLOBALS['kline_last_n_history'] - 1; //including last price
-                    $countHistory = 0;
-                    while ($countHistory <= $depend_on_last_n_history) {
+                        $profit_count = 0;
+                        // $lastPrice = $GLOBALS['Ds_bt_common']->getPrice($asset['asset'] . "BUSD", $key, $secret); // price range
+                        $lastPrice = $coinHistories[$GLOBALS['kline_last_n_history'] - 1][4];
+                        $i = $GLOBALS['kline_last_n_history'] - 1; //including last price
+                        $countHistory = 0;
+                        while ($countHistory <= $depend_on_last_n_history) {
 
-                        //close price - open price
-                        if ($coinHistories[$i][4] - $coinHistories[$i][1] > 0) { // if it's positive 
-                            $profit_count++;
+                            //close price - open price
+                            if ($coinHistories[$i][4] - $coinHistories[$i][1] > 0) { // if it's positive 
+                                $profit_count++;
+                            }
+                            $i--;
+                            $countHistory++;
                         }
-                        $i--;
-                        $countHistory++;
+
+
+                        if ($profit_count == ($depend_on_last_n_history + 1)) { //including last price
+                            echo '{' . $symbolList->symbol . " profiting. busd_volume " . $symbolList->busd_volume . ' 24h% ' . $symbolList->priceChangePercent . ' lastPrice is ' . $lastPrice . '}, ';
+
+                            // echo ' its profiting';
+                            // print_r($coinHistories);
+                            // break;
+
+                            // to remove orderBook api call, order by current price - minium allowed order price ($symbolList->precisionPrice from db)
+                            // $orderBook = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/depth?symbol=".$symbolList->symbol."BUSD&limit=5", $key); // get orderbook (BUY)
+                            // if ($orderBook['code'] == 200 || $orderBook['code'] == 201) {
+                            //     $lastOnOrderBook = json_decode($orderBook['result'], true)->bids[0][0];
+                            //     $freeAsset = $asset['free'] - ($asset['free'] % $lastOnOrderBook);
+                            //     $type = "LIMIT";
+                            //     $price = json_decode($orderBook['result'], true)->bids[0][0];
+                            //     $quantity =  $freeAsset / $symbolList->min_slot;
+                            //     $GLOBALS['Ds_bt_common']->order($symbolList->symbol . "BUSD", "BUY", $type, $quantity, $price, $recvWindow, $key, $secret);
+                            // }
+                        }
                     }
-
-
-                    if ($profit_count == ($depend_on_last_n_history + 1)) { //including last price
-                    echo '{' . $symbolList->symbol . " profiting. busd_volume " . $symbolList->busd_volume. ' 24h% '.$symbolList->priceChangePercent.' lastPrice is ' . $lastPrice . '}, ';
-
-                        // echo ' its profiting';
-                        // print_r($coinHistories);
-                        // break;
-
-                        // to remove orderBook api call, order by current price - minium allowed order price ($symbolList->precisionPrice from db)
-                        // $orderBook = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/depth?symbol=".$symbolList->symbol."BUSD&limit=5", $key); // get orderbook (BUY)
-                        // if ($orderBook['code'] == 200 || $orderBook['code'] == 201) {
-                        //     $lastOnOrderBook = json_decode($orderBook['result'], true)->bids[0][0];
-                        //     $freeAsset = $asset['free'] - ($asset['free'] % $lastOnOrderBook);
-                        //     $type = "LIMIT";
-                        //     $price = json_decode($orderBook['result'], true)->bids[0][0];
-                        //     $quantity =  $freeAsset / $symbolList->min_slot;
-                        //     $GLOBALS['Ds_bt_common']->order($symbolList->symbol . "BUSD", "BUY", $type, $quantity, $price, $recvWindow, $key, $secret);
-                        // }
-                    }
-                }
                 } catch (\Throwable $th) {
                     //throw $th;
                     echo 'error on ' . $symbolList->symbol;
