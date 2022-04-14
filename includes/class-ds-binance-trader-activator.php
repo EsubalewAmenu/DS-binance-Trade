@@ -140,6 +140,9 @@ class Ds_Binance_Trader_Activator
 			$sql .= "  `busd_volume`  DECIMAL(16,8) NOT NULL, ";
 			$sql .= "  `priceChange`  DECIMAL(16,8) NOT NULL, ";
 			$sql .= "  `priceChangePercent`  DECIMAL(16,8) NOT NULL, ";
+
+			$sql .= "  `currentAsset`  DECIMAL(16,8) NOT NULL, ";
+			$sql .= "  `busdValue`  DECIMAL(16,8) NOT NULL, ";
 			
 
 			$sql .= "  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ";

@@ -106,6 +106,9 @@ class Ds_bt_common
 											'busd_volume' => $ticker['quoteVolume'],
 											'priceChange' => $ticker['priceChange'],
 											'priceChangePercent' => $ticker['priceChangePercent'],
+
+											'currentAsset' => $baseAsset->currentAsset, //$ticker['currentAsset'],
+											'busdValue' => $baseAsset->busdValue, //$ticker['busdValue'],
 										];
 										$where = ['symbol' => $symbol['baseAsset']];
 										$wpdb->update($wp_ds_bt_symbols_table, $data, $where);
@@ -124,6 +127,9 @@ class Ds_bt_common
 											'busd_volume' => $ticker['quoteVolume'],
 											'priceChange' => $ticker['priceChange'],
 											'priceChangePercent' => $ticker['priceChangePercent'],
+
+											'currentAsset' => 0, //$ticker['currentAsset'],
+											'busdValue' => 0, //$ticker['busdValue'],
 
 										));
 									}
@@ -228,4 +234,61 @@ class Ds_bt_common
 	{
 		return hash_hmac('sha256', $query_string, $secret);
 	}
+
+
+	public static function postAPI($url, $data)
+	{
+
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+
+		$header = array();
+
+
+		curl_setopt($ch, CURLOPT_POST, 1);
+
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+
+		$header[] = 'Content-Type: application/json';
+		curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+		// Receive server response ...
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+		$result = curl_exec($ch);
+		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+		curl_close($ch);
+
+		return array("code" => $http_code, "result" => $result);
+	}
+	// public static function callAPI($method, $url, $data)
+	// {
+	// 	$curl = curl_init();
+
+	// 	switch ($method) {
+	// 		case "POST":
+	// 			curl_setopt($curl, CURLOPT_POST, 1);
+
+	// 			if ($data)
+	// 				curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+	// 			break;
+	// 		case "PUT":
+	// 			curl_setopt($curl, CURLOPT_PUT, 1);
+	// 			break;
+	// 		default:
+	// 			if ($data)
+	// 				$url = sprintf("%s?%s", $url, http_build_query($data));
+	// 	}
+
+	// 	curl_setopt($curl, CURLOPT_URL, $url);
+	// 	curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+
+	// 	$result = curl_exec($curl);
+
+	// 	curl_close($curl);
+
+	// 	// print_r( $result );
+
+	// 	return $result;
+	// }
 }
