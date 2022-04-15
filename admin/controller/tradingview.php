@@ -1,5 +1,7 @@
 <?php
-
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
 /**
  * The public-facing functionality of the plugin.
  *
@@ -48,7 +50,7 @@ class Ds_bt_tradingview
         $recvWindow = $GLOBALS['Ds_bt_common']->recvWindow();
 
         $priceToTradeOnSingleCoin = 15;
-        $depend_on_interval = "1D";
+        $depend_on_interval = "15m";
         // //1m3m5m15m30m1h2h4h6h8h12h1d3d1w1M
         $trade_coin_volume = 3000000;
 
@@ -77,9 +79,17 @@ class Ds_bt_tradingview
         // get strong buy and buy from tradingview
         // check status with inter vall for each
         // order buy
-        echo "test";
+        // echo "test";
+
         $url = "https://scanner.tradingview.com/crypto/scan";
-        $data = '{"filter":[{"left":"change","operation":"nempty"},{"left":"exchange","operation":"equal","right":"BINANCE"},{"left":"Recommend.All","operation":"nequal","right":0.1},{"left":"name,description","operation":"match","right":"busd"}],"options":{"lang":"en"},"filter2":{"operator":"and","operands":[{"operation":{"operator":"or","operands":[{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.5,1]}},{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.1,0.5]}}]}}]},"markets":["crypto"],"symbols":{"query":{"types":[]},"tickers":[]},"columns":["base_currency_logoid","currency_logoid","name","close","change","change_abs","high","low","volume","Recommend.All","exchange","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"change","sortOrder":"asc"},"range":[0,150]}';
+
+        if ($depend_on_interval == "5m") {
+            $data = '{"filter":[{"left":"change|5","operation":"nempty"},{"left":"exchange","operation":"equal","right":"BINANCE"},{"left":"volume","operation":"in_range","right":[2000000,50000000]},{"left":"Recommend.All","operation":"nequal","right":0.1},{"left":"name,description","operation":"match","right":"BUSD"}],"options":{"lang":"en"},"filter2":{"operator":"and","operands":[{"operation":{"operator":"or","operands":[{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.1,0.5]}},{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.5,1]}}]}}]},"markets":["crypto"],"symbols":{"query":{"types":[]},"tickers":[]},"columns":["base_currency_logoid","currency_logoid","name","close","change","volume","Recommend.All","ask","exchange","change|5","change|15","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"change|5","sortOrder":"desc"},"range":[0,150]}';
+            // // response is order by 5m change :- symbol, last price, change24 %, volume, tech rating 24, ask, excenge, change5m %, change15m %
+        } else if ($depend_on_interval == "15m") {
+            $data = '{"filter":[{"left":"change|15","operation":"nempty"},{"left":"exchange","operation":"equal","right":"BINANCE"},{"left":"volume","operation":"in_range","right":[2000000,50000000]},{"left":"Recommend.All","operation":"nequal","right":0.1},{"left":"name,description","operation":"match","right":"BUSD"}],"options":{"lang":"en"},"filter2":{"operator":"and","operands":[{"operation":{"operator":"or","operands":[{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.1,0.5]}},{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.5,1]}}]}}]},"markets":["crypto"],"symbols":{"query":{"types":[]},"tickers":[]},"columns":["base_currency_logoid","currency_logoid","name","close","change","volume","Recommend.All","ask","exchange","change|5","change|15","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"change|15","sortOrder":"desc"},"range":[0,150]}';
+            // response is order by 15m change :- symbol, last price, change24 %, volume, tech rating 24, ask, excenge, change5m %, change15m %
+        }
         $response = $GLOBALS['Ds_bt_common']->postAPI($url, $data);
 
         // print_r($response);
@@ -89,22 +99,61 @@ class Ds_bt_tradingview
 
             // print_r($response['data']);
             foreach ($response['data'] as $symbol) {
-                // print_r($symbol['d'][2]); // BTCBUSD
-                $fullSymbol = $symbol['d'][2]; // check if it ends with BUUSD
+                $fullSymbol = $symbol['d'][2];
+                $lastPrice = $symbol['d'][3];
+                $change24Perc = $symbol['d'][4];
+                $volume = $symbol['d'][5];
+                $techRate24 = $symbol['d'][6];
+                $ask = $symbol['d'][7];
+                $exchange = $symbol['d'][8];
+                $change5mPerc = $symbol['d'][9];
+                $change15mPerc = $symbol['d'][10];
 
-                // $cmd = "python3 /home/esubalew/Desktop/tezt.py ";
-                $cmd = "python3 " . ds_bt_PLAGIN_DIR . 'admin/controller/recommendation/ta.py';
-                $output = shell_exec($cmd);
-                $output = substr($output, 0, -1);
-                echo 'ta recommendation is truef' . $output.'e';
-                $recommendation = json_decode($output, true);
-                print_r($recommendation);
-                echo 'ta recommendation end';
+                if ($depend_on_interval == "5m" && $change5mPerc > '0.1') {
 
-                echo $recommendation;
-break;  
+                    echo "buy Symbol = " . $fullSymbol . " lastPrice=" . $lastPrice . " 24h change=" . $change24Perc . " volume=" . $volume .
+                        " Techrate24=" . $techRate24 . " ask=" . $ask . " exchange=" . $exchange . " 5m change=" . $change5mPerc . " 15m chage=" . $change15mPerc . "</br>\n";
 
+                    $asset->currentAsset -= $asset->currentAsset % $lastPrice;
+                    $quantity = $asset->currentAsset / $lastPrice;
+
+                    self::save_trade($fullSymbol, "BUY", "SPOT", $quantity, $lastPrice, 'orderId', 'orderListId', 'clientOrderId', 'transactTime');
+                } else if ($depend_on_interval == "15m" && $change15mPerc > '0.3') {
+                    echo "buy Symbol = " . $fullSymbol . " lastPrice=" . $lastPrice . " 24h change=" . $change24Perc . " volume=" . $volume .
+                        " Techrate24=" . $techRate24 . " ask=" . $ask . " exchange=" . $exchange . " 5m change=" . $change5mPerc . " 15m chage=" . $change15mPerc . "</br>\n";
+
+                    // echo "value is " . (floatval('100') % floatval('0.1207')) . '</br>\n';
+                    // echo "value is " . '100.00' % '0.12' . '</br>\n';
+                    // echo "value is " . '100.00000000' % '0.1207' . '</br>\n';
+                    // echo "currentAsset=" . $asset->currentAsset . " lastPrice=" . $lastPrice; //. " Quanity=" . $quantity;
+
+                    // $asset->currentAsset -= floatval($asset->currentAsset) % floatval($lastPrice);
+                    $quantity = $asset->currentAsset / $lastPrice;
+                    self::save_trade($fullSymbol, "BUY", "SPOT", $quantity, $lastPrice, 'orderId', 'orderListId', 'clientOrderId', 'transactTime');
+                }
             }
         }
+    }
+    function save_trade($symbol, $side, $type, $quantity, $price, $orderId, $orderListId, $clientOrderId, $transactTime)
+    {
+
+        global $table_prefix, $wpdb;
+
+        $wp_ds_table = $table_prefix . "ds_bt_trades";
+
+        $dbResult = $wpdb->insert($wp_ds_table, array(
+            'symbol' => $symbol,
+            'side' => $side,
+            'type' => $type,
+            'quantity' => $quantity,
+            'price' => $price,
+            'status' => "NEW",
+
+            'orderId' => $orderId,
+            'orderListId' => $orderListId,
+            'clientOrderId' => $clientOrderId,
+            'transactTime' => $transactTime,
+
+        ));
     }
 }
