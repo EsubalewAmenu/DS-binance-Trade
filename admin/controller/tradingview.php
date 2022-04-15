@@ -54,42 +54,62 @@ class Ds_bt_tradingview
         // //1m3m5m15m30m1h2h4h6h8h12h1d3d1w1M
         $trade_coin_volume = 3000000;
 
-        if ($GLOBALS['Ds_bt_common']->isSymbolsUpdated($key)) {
-            self::myLocalAccount($priceToTradeOnSingleCoin, $depend_on_interval, $trade_coin_volume, $key, $secret, $recvWindow);
+        $BUSD_USDT = "BUSD";
+        // $BUSD_USDT = "USDT";
+        self::buyAndHoldCoin('TEST', $BUSD_USDT, $depend_on_interval, $trade_coin_volume, $key, $secret, $recvWindow);
+
+        // if ($GLOBALS['Ds_bt_common']->isSymbolsUpdated($key)) {
+        //     self::myLocalAccount($priceToTradeOnSingleCoin, $depend_on_interval, $trade_coin_volume, $key, $secret, $recvWindow);
+        // }
+    }
+    // public function myLocalAccount($priceToTradeOnSingleCoin, $depend_on_interval, $trade_coin_volume, $key, $secret, $recvWindow)
+    // {
+
+    //     global $table_prefix, $wpdb;
+    //     $wp_ds_bt_symbols_table = $table_prefix . "ds_bt_symbols";
+    //     $assets = $wpdb->get_results("SELECT * FROM " . $wp_ds_bt_symbols_table . ' WHERE busdValue > 11');
+
+    //     $BUSD_USDT = "BUSD";
+    //     // $BUSD_USDT = "USDT";
+    //     foreach ($assets as $asset) {
+    //         if ($asset->symbol != "BUSD") {
+    //             // check sell
+    //             self::checkAndSellCoin($asset, $depend_on_interval, $trade_coin_volume, $key, $secret, $recvWindow);
+    //         } else {
+    //             // check and buy
+    //             self::buyAndHoldCoin($asset, $BUSD_USDT, $depend_on_interval, $trade_coin_volume, $key, $secret, $recvWindow);
+    //         }
+    //     }
+    // }
+    public function checkAndSellCoin($asset, $depend_on_interval, $trade_coin_volume, $key, $secret, $recvWindow)
+    {
+        if ($asset->busdValue > 11) {
+            $cmd = "python3 " . ds_bt_PLAGIN_DIR . 'admin/controller/recommendation/ta.py --symbol ' . $asset->symbol . "BUSD --interval " . $depend_on_interval;
+            $output = shell_exec($cmd);
+            // echo $output;
+            if (str_starts_with($output, "{'RECOMMENDATION': 'SELL'"))
+                echo "SELL on " . $asset->symbol . "</br>\n";
+            else if (str_starts_with($output, "{'RECOMMENDATION': 'STRONG_SELL'"))
+                echo "STRONG_SELL on " . $asset->symbol . "</br>\n";
+            else "reco is " . $output;
         }
     }
-    public function myLocalAccount($priceToTradeOnSingleCoin, $depend_on_interval, $trade_coin_volume, $key, $secret, $recvWindow)
+    public function buyAndHoldCoin($asset, $BUSD_USDT, $depend_on_interval, $trade_coin_volume, $key, $secret, $recvWindow)
     {
-
-        global $table_prefix, $wpdb;
-        $wp_ds_bt_symbols_table = $table_prefix . "ds_bt_symbols";
-        $assets = $wpdb->get_results("SELECT * FROM " . $wp_ds_bt_symbols_table . ' WHERE busdValue > 11');
-
-        foreach ($assets as $asset) {
-            if ($asset->symbol != "BUSD") {
-                // check sell
-            } else {
-                // check and buy
-                self::buyAndHoldCoin($asset, $depend_on_interval, $trade_coin_volume, $key, $secret, $recvWindow);
-            }
-        }
-    }
-    public function buyAndHoldCoin($asset, $depend_on_interval, $trade_coin_volume, $key, $secret, $recvWindow)
-    {
-        // get strong buy and buy from tradingview
-        // check status with inter vall for each
-        // order buy
         // echo "test";
 
         $url = "https://scanner.tradingview.com/crypto/scan";
 
-        if ($depend_on_interval == "5m") {
-            $data = '{"filter":[{"left":"change|5","operation":"nempty"},{"left":"exchange","operation":"equal","right":"BINANCE"},{"left":"volume","operation":"in_range","right":[2000000,50000000]},{"left":"Recommend.All","operation":"nequal","right":0.1},{"left":"name,description","operation":"match","right":"BUSD"}],"options":{"lang":"en"},"filter2":{"operator":"and","operands":[{"operation":{"operator":"or","operands":[{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.1,0.5]}},{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.5,1]}}]}}]},"markets":["crypto"],"symbols":{"query":{"types":[]},"tickers":[]},"columns":["base_currency_logoid","currency_logoid","name","close","change","volume","Recommend.All","ask","exchange","change|5","change|15","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"change|5","sortOrder":"desc"},"range":[0,150]}';
-            // // response is order by 5m change :- symbol, last price, change24 %, volume, tech rating 24, ask, excenge, change5m %, change15m %
-        } else if ($depend_on_interval == "15m") {
-            $data = '{"filter":[{"left":"change|15","operation":"nempty"},{"left":"exchange","operation":"equal","right":"BINANCE"},{"left":"volume","operation":"in_range","right":[2000000,50000000]},{"left":"Recommend.All","operation":"nequal","right":0.1},{"left":"name,description","operation":"match","right":"BUSD"}],"options":{"lang":"en"},"filter2":{"operator":"and","operands":[{"operation":{"operator":"or","operands":[{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.1,0.5]}},{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.5,1]}}]}}]},"markets":["crypto"],"symbols":{"query":{"types":[]},"tickers":[]},"columns":["base_currency_logoid","currency_logoid","name","close","change","volume","Recommend.All","ask","exchange","change|5","change|15","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"change|15","sortOrder":"desc"},"range":[0,150]}';
-            // response is order by 15m change :- symbol, last price, change24 %, volume, tech rating 24, ask, excenge, change5m %, change15m %
-        }
+        if ($depend_on_interval == "5m" && ($BUSD_USDT == "BUSD" || $BUSD_USDT == "USDT")) {
+            //BUSD
+            $data = '{"filter":[{"left":"change|5","operation":"nempty"},{"left":"exchange","operation":"equal","right":"BINANCE"},{"left":"volume","operation":"in_range","right":[2000000,50000000]},{"left":"change|5","operation":"greater","right":0.1},{"left":"Recommend.All","operation":"nequal","right":0.1},{"left":"name,description","operation":"match","right":"' . $BUSD_USDT . '"}],"options":{"lang":"en"},"filter2":{"operator":"and","operands":[{"operation":{"operator":"or","operands":[{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.1,0.5]}},{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.5,1]}}]}}]},"markets":["crypto"],"symbols":{"query":{"types":[]},"tickers":[]},"columns":["base_currency_logoid","currency_logoid","name","close","change","volume","Recommend.All","ask","exchange","change|5","change|15","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"change|5","sortOrder":"desc"},"range":[0,150]}';
+            // response is order by 5m change :- symbol, last price, change24 %, volume, tech rating 24, ask, exchange, change5m %, change15m %
+        } else if ($depend_on_interval == "15m" && ($BUSD_USDT == "BUSD" || $BUSD_USDT == "USDT")) {
+            //BUSD
+            $data = '{"filter":[{"left":"change|15","operation":"nempty"},{"left":"exchange","operation":"equal","right":"BINANCE"},{"left":"volume","operation":"in_range","right":[2000000,50000000]},{"left":"change|15","operation":"greater","right":0.1},{"left":"Recommend.All","operation":"nequal","right":0.1},{"left":"name,description","operation":"match","right":"' . $BUSD_USDT . '"}],"options":{"lang":"en"},"filter2":{"operator":"and","operands":[{"operation":{"operator":"or","operands":[{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.1,0.5]}},{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.5,1]}}]}}]},"markets":["crypto"],"symbols":{"query":{"types":[]},"tickers":[]},"columns":["base_currency_logoid","currency_logoid","name","close","change","volume","Recommend.All","ask","exchange","change|5","change|15","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"change|15","sortOrder":"desc"},"range":[0,150]}';
+            // response is order by 15m change :- symbol, last price, change24 %, volume, tech rating 24, ask, exchange, change5m %, change15m %
+        } else echo " Please choose correct BUSD_USDT and interval FIRST";
+
         $response = $GLOBALS['Ds_bt_common']->postAPI($url, $data);
 
         // print_r($response);
@@ -100,36 +120,63 @@ class Ds_bt_tradingview
             // print_r($response['data']);
             foreach ($response['data'] as $symbol) {
                 $fullSymbol = $symbol['d'][2];
-                $lastPrice = $symbol['d'][3];
-                $change24Perc = $symbol['d'][4];
-                $volume = $symbol['d'][5];
-                $techRate24 = $symbol['d'][6];
-                $ask = $symbol['d'][7];
-                $exchange = $symbol['d'][8];
-                $change5mPerc = $symbol['d'][9];
-                $change15mPerc = $symbol['d'][10];
+                if (str_ends_with($fullSymbol, $BUSD_USDT)) { //"BUSD")) {
+                    $lastPrice = $symbol['d'][3];
+                    $change24Perc = $symbol['d'][4];
+                    $volume = $symbol['d'][5];
+                    $techRate24 = $symbol['d'][6];
+                    $ask = $symbol['d'][7];
+                    $exchange = $symbol['d'][8];
+                    $change5mPerc = $symbol['d'][9];
+                    $change15mPerc = $symbol['d'][10];
 
-                if ($depend_on_interval == "5m" && $change5mPerc > '0.1') {
+                    $cmd = "python3 " . ds_bt_PLAGIN_DIR . 'admin/controller/recommendation/ta.py --symbol ' . $fullSymbol . ' --interval ' . $depend_on_interval;
+                    $output = shell_exec($cmd);
+                    // echo $output;
+                    if (str_starts_with($output, "{'RECOMMENDATION': 'STRONG_BUY'")) {
+                        echo "STRONG_BUY on " . $fullSymbol . "</br>\n";
 
-                    echo "buy Symbol = " . $fullSymbol . " lastPrice=" . $lastPrice . " 24h change=" . $change24Perc . " volume=" . $volume .
-                        " Techrate24=" . $techRate24 . " ask=" . $ask . " exchange=" . $exchange . " 5m change=" . $change5mPerc . " 15m chage=" . $change15mPerc . "</br>\n";
+                        echo "buy Symbol = " . $fullSymbol . " lastPrice=" . $lastPrice . " 24h change=" . $change24Perc . " volume=" . $volume .
+                            " Techrate24=" . $techRate24 . " ask=" . $ask . " exchange=" . $exchange . " 5m change=" . $change5mPerc . " 15m chage=" . $change15mPerc . "</br>\n";
 
-                    $asset->currentAsset -= $asset->currentAsset % $lastPrice;
-                    $quantity = $asset->currentAsset / $lastPrice;
+                        //     $asset->currentAsset -= $asset->currentAsset % $lastPrice;
+                        //     $quantity = $asset->currentAsset / $lastPrice;
 
-                    self::save_trade($fullSymbol, "BUY", "SPOT", $quantity, $lastPrice, 'orderId', 'orderListId', 'clientOrderId', 'transactTime');
-                } else if ($depend_on_interval == "15m" && $change15mPerc > '0.3') {
-                    echo "buy Symbol = " . $fullSymbol . " lastPrice=" . $lastPrice . " 24h change=" . $change24Perc . " volume=" . $volume .
-                        " Techrate24=" . $techRate24 . " ask=" . $ask . " exchange=" . $exchange . " 5m change=" . $change5mPerc . " 15m chage=" . $change15mPerc . "</br>\n";
+                        //     self::save_trade($fullSymbol, "BUY", "SPOT", $quantity, $lastPrice, 'orderId', 'orderListId', 'clientOrderId', 'transactTime');
 
-                    // echo "value is " . (floatval('100') % floatval('0.1207')) . '</br>\n';
-                    // echo "value is " . '100.00' % '0.12' . '</br>\n';
-                    // echo "value is " . '100.00000000' % '0.1207' . '</br>\n';
-                    // echo "currentAsset=" . $asset->currentAsset . " lastPrice=" . $lastPrice; //. " Quanity=" . $quantity;
+                    } else if (str_starts_with($output, "{'RECOMMENDATION': 'BUY'"))
+                        echo "BUY on " . $fullSymbol . "</br>\n";
+                    else if (str_starts_with($output, "{'RECOMMENDATION': 'SELL'"))
+                        echo "SELL on " . $fullSymbol . "</br>\n";
+                    else if (str_starts_with($output, "{'RECOMMENDATION': 'STRONG_SELL'"))
+                        echo "STRONG_SELL on " . $fullSymbol . "</br>\n";
+                    else if (str_starts_with($output, "{'RECOMMENDATION': 'NEUTRAL'"))
+                        echo "NEUTRAL on " . $fullSymbol . "</br>\n";
+                    else
+                        echo $output . " on " . $fullSymbol . "</br>\n";
 
-                    // $asset->currentAsset -= floatval($asset->currentAsset) % floatval($lastPrice);
-                    $quantity = $asset->currentAsset / $lastPrice;
-                    self::save_trade($fullSymbol, "BUY", "SPOT", $quantity, $lastPrice, 'orderId', 'orderListId', 'clientOrderId', 'transactTime');
+                    // if ($depend_on_interval == "5m" && $change5mPerc > '0.1') {
+
+                    //     echo "buy Symbol = " . $fullSymbol . " lastPrice=" . $lastPrice . " 24h change=" . $change24Perc . " volume=" . $volume .
+                    //         " Techrate24=" . $techRate24 . " ask=" . $ask . " exchange=" . $exchange . " 5m change=" . $change5mPerc . " 15m chage=" . $change15mPerc . "</br>\n";
+
+                    //     $asset->currentAsset -= $asset->currentAsset % $lastPrice;
+                    //     $quantity = $asset->currentAsset / $lastPrice;
+
+                    //     self::save_trade($fullSymbol, "BUY", "SPOT", $quantity, $lastPrice, 'orderId', 'orderListId', 'clientOrderId', 'transactTime');
+                    // } else if ($depend_on_interval == "15m" && $change15mPerc > '0.3') {
+                    //     echo "buy Symbol = " . $fullSymbol . " lastPrice=" . $lastPrice . " 24h change=" . $change24Perc . " volume=" . $volume .
+                    //         " Techrate24=" . $techRate24 . " ask=" . $ask . " exchange=" . $exchange . " 5m change=" . $change5mPerc . " 15m chage=" . $change15mPerc . "</br>\n";
+
+                    //     // echo "value is " . (floatval('100') % floatval('0.1207')) . '</br>\n';
+                    //     // echo "value is " . '100.00' % '0.12' . '</br>\n';
+                    //     // echo "value is " . '100.00000000' % '0.1207' . '</br>\n';
+                    //     // echo "currentAsset=" . $asset->currentAsset . " lastPrice=" . $lastPrice; //. " Quanity=" . $quantity;
+
+                    //     // $asset->currentAsset -= floatval($asset->currentAsset) % floatval($lastPrice);
+                    //     $quantity = $asset->currentAsset / $lastPrice;
+                    //     self::save_trade($fullSymbol, "BUY", "SPOT", $quantity, $lastPrice, 'orderId', 'orderListId', 'clientOrderId', 'transactTime');
+                    // }
                 }
             }
         }
