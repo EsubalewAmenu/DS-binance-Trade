@@ -155,5 +155,28 @@ class Ds_bt_tradingview
             'transactTime' => $transactTime,
 
         ));
+
+        $wp_ds_bt_symbols_table = $table_prefix . "ds_bt_symbols";
+
+        if ($side == "BUY") {
+            $data = [
+                'lastPrice' => $price,
+
+                'currentAsset' => $quantity, // + old amount
+                'busdValue' => $quantity * $price,
+            ];
+
+            $wpdb->update($wp_ds_bt_symbols_table, ['currentAsset' => 0], ['symbol' => 'BUSD']);
+        } else {
+            $data = [
+                'lastPrice' => $price,
+
+                'currentAsset' => 0, // old amount - $quantity
+                'busdValue' => 0, //(old amount - $quantity) * $price
+            ];
+            $wpdb->update($wp_ds_bt_symbols_table, ['currentAsset' => $price * $quantity], ['symbol' => 'BUSD']);
+        }
+        $where = ['symbol' => substr($symbol, 0, 4)];
+        $wpdb->update($wp_ds_bt_symbols_table, $data, $where);
     }
 }
