@@ -54,13 +54,15 @@ class Ds_bt_tradingview
         // //1m3m5m15m30m1h2h4h6h8h12h1d3d1w1M
         $trade_coin_volume = 3000000;
 
-        $BUSD_USDT = "BUSD";
-        // $BUSD_USDT = "USDT";
-        self::buyAndHoldCoin('TEST', $BUSD_USDT, $depend_on_interval, $trade_coin_volume, $key, $secret, $recvWindow);
+        // $BUSD_USDT = "BUSD";
+        $BUSD_USDT = "USDT";
 
-        // if ($GLOBALS['Ds_bt_common']->isSymbolsUpdated($key)) {
-        //     self::myLocalAccount($priceToTradeOnSingleCoin, $depend_on_interval, $trade_coin_volume, $key, $secret, $recvWindow);
-        // }
+        if ($GLOBALS['Ds_bt_common']->isSymbolsUpdated($key)) {
+            self::buyAndHoldCoin('TEST', $BUSD_USDT, $depend_on_interval, $trade_coin_volume, $key, $secret, $recvWindow);
+            self::checkAndSellCoin('EOS', $BUSD_USDT, $depend_on_interval, $trade_coin_volume, $key, $secret, $recvWindow);
+
+            // self::myLocalAccount($priceToTradeOnSingleCoin, $depend_on_interval, $trade_coin_volume, $key, $secret, $recvWindow);
+        }
     }
     // public function myLocalAccount($priceToTradeOnSingleCoin, $depend_on_interval, $trade_coin_volume, $key, $secret, $recvWindow)
     // {
@@ -81,18 +83,20 @@ class Ds_bt_tradingview
     //         }
     //     }
     // }
-    public function checkAndSellCoin($asset, $depend_on_interval, $trade_coin_volume, $key, $secret, $recvWindow)
+    public function checkAndSellCoin($asset, $BUSD_USDT, $depend_on_interval, $trade_coin_volume, $key, $secret, $recvWindow)
     {
-        if ($asset->busdValue > 11) {
-            $cmd = "python3 " . ds_bt_PLAGIN_DIR . 'admin/controller/recommendation/ta.py --symbol ' . $asset->symbol . "BUSD --interval " . $depend_on_interval;
-            $output = shell_exec($cmd);
-            // echo $output;
-            if (str_starts_with($output, "{'RECOMMENDATION': 'SELL'"))
-                echo "SELL on " . $asset->symbol . "</br>\n";
-            else if (str_starts_with($output, "{'RECOMMENDATION': 'STRONG_SELL'"))
-                echo "STRONG_SELL on " . $asset->symbol . "</br>\n";
-            else "reco is " . $output;
-        }
+        // if ($asset->busdValue > 11) {
+
+            $symbolRecomendation = self::symbol_status($asset . $BUSD_USDT, $depend_on_interval);
+
+            if ($symbolRecomendation == 'SELL' ||$symbolRecomendation ==  'STRONG_SELL') {
+                
+                echo "sell $asset coin. rec = " . $symbolRecomendation;
+                
+                self::save_trade($asset . $BUSD_USDT, "SELL", "SPOT", 1000, 0, 'orderId', 'orderListId', 'clientOrderId', 'transactTime');
+
+            }else echo $asset . " reco is " . $symbolRecomendation;
+
     }
     public function buyAndHoldCoin($asset, $BUSD_USDT, $depend_on_interval, $trade_coin_volume, $key, $secret, $recvWindow)
     {
@@ -130,57 +134,43 @@ class Ds_bt_tradingview
                     $change5mPerc = $symbol['d'][9];
                     $change15mPerc = $symbol['d'][10];
 
-                    $cmd = "python3 " . ds_bt_PLAGIN_DIR . 'admin/controller/recommendation/ta.py --symbol ' . $fullSymbol . ' --interval ' . $depend_on_interval;
-                    $output = shell_exec($cmd);
-                    // echo $output;
-                    if (str_starts_with($output, "{'RECOMMENDATION': 'STRONG_BUY'")) {
-                        echo "STRONG_BUY on " . $fullSymbol . "</br>\n";
+                    $symbolRecomendation = self::symbol_status($fullSymbol, $depend_on_interval);
+                    if ($symbolRecomendation == 'STRONG_BUY') {
 
                         echo "buy Symbol = " . $fullSymbol . " lastPrice=" . $lastPrice . " 24h change=" . $change24Perc . " volume=" . $volume .
                             " Techrate24=" . $techRate24 . " ask=" . $ask . " exchange=" . $exchange . " 5m change=" . $change5mPerc . " 15m chage=" . $change15mPerc . "</br>\n";
 
-                        //     $asset->currentAsset -= $asset->currentAsset % $lastPrice;
-                        //     $quantity = $asset->currentAsset / $lastPrice;
+                        // $asset->currentAsset -= $asset->currentAsset % $lastPrice;
+                        // $quantity = $asset->currentAsset / $lastPrice;
+                        $quantity = 100 / $lastPrice;
 
-                        //     self::save_trade($fullSymbol, "BUY", "SPOT", $quantity, $lastPrice, 'orderId', 'orderListId', 'clientOrderId', 'transactTime');
-
-                    } else if (str_starts_with($output, "{'RECOMMENDATION': 'BUY'"))
-                        echo "BUY on " . $fullSymbol . "</br>\n";
-                    else if (str_starts_with($output, "{'RECOMMENDATION': 'SELL'"))
-                        echo "SELL on " . $fullSymbol . "</br>\n";
-                    else if (str_starts_with($output, "{'RECOMMENDATION': 'STRONG_SELL'"))
-                        echo "STRONG_SELL on " . $fullSymbol . "</br>\n";
-                    else if (str_starts_with($output, "{'RECOMMENDATION': 'NEUTRAL'"))
-                        echo "NEUTRAL on " . $fullSymbol . "</br>\n";
-                    else
-                        echo $output . " on " . $fullSymbol . "</br>\n";
-
-                    // if ($depend_on_interval == "5m" && $change5mPerc > '0.1') {
-
-                    //     echo "buy Symbol = " . $fullSymbol . " lastPrice=" . $lastPrice . " 24h change=" . $change24Perc . " volume=" . $volume .
-                    //         " Techrate24=" . $techRate24 . " ask=" . $ask . " exchange=" . $exchange . " 5m change=" . $change5mPerc . " 15m chage=" . $change15mPerc . "</br>\n";
-
-                    //     $asset->currentAsset -= $asset->currentAsset % $lastPrice;
-                    //     $quantity = $asset->currentAsset / $lastPrice;
-
-                    //     self::save_trade($fullSymbol, "BUY", "SPOT", $quantity, $lastPrice, 'orderId', 'orderListId', 'clientOrderId', 'transactTime');
-                    // } else if ($depend_on_interval == "15m" && $change15mPerc > '0.3') {
-                    //     echo "buy Symbol = " . $fullSymbol . " lastPrice=" . $lastPrice . " 24h change=" . $change24Perc . " volume=" . $volume .
-                    //         " Techrate24=" . $techRate24 . " ask=" . $ask . " exchange=" . $exchange . " 5m change=" . $change5mPerc . " 15m chage=" . $change15mPerc . "</br>\n";
-
-                    //     // echo "value is " . (floatval('100') % floatval('0.1207')) . '</br>\n';
-                    //     // echo "value is " . '100.00' % '0.12' . '</br>\n';
-                    //     // echo "value is " . '100.00000000' % '0.1207' . '</br>\n';
-                    //     // echo "currentAsset=" . $asset->currentAsset . " lastPrice=" . $lastPrice; //. " Quanity=" . $quantity;
-
-                    //     // $asset->currentAsset -= floatval($asset->currentAsset) % floatval($lastPrice);
-                    //     $quantity = $asset->currentAsset / $lastPrice;
-                    //     self::save_trade($fullSymbol, "BUY", "SPOT", $quantity, $lastPrice, 'orderId', 'orderListId', 'clientOrderId', 'transactTime');
-                    // }
+                        // self::save_trade($fullSymbol, "BUY", "SPOT", $quantity, $lastPrice, 'orderId', 'orderListId', 'clientOrderId', 'transactTime');
+                    } else
+                        echo $fullSymbol . " not bought RECOMMENDATION is " . $symbolRecomendation . "</br>\n";
                 }
             }
         }
     }
+    function symbol_status($fullSymbol, $depend_on_interval)
+    {
+
+        $cmd = "python3 " . ds_bt_PLAGIN_DIR . 'admin/controller/recommendation/ta.py --symbol ' . $fullSymbol . ' --interval ' . $depend_on_interval;
+        $output = shell_exec($cmd);
+        // echo $output;
+        if (str_starts_with($output, "{'RECOMMENDATION': 'STRONG_BUY'")) {
+            return "STRONG_BUY";
+        } else if (str_starts_with($output, "{'RECOMMENDATION': 'BUY'"))
+            return "BUY";
+        else if (str_starts_with($output, "{'RECOMMENDATION': 'SELL'"))
+            return "SELL";
+        else if (str_starts_with($output, "{'RECOMMENDATION': 'STRONG_SELL'"))
+            return "STRONG_SELL";
+        else if (str_starts_with($output, "{'RECOMMENDATION': 'NEUTRAL'"))
+            return "NEUTRAL";
+        else
+            return $output;
+    }
+
     function save_trade($symbol, $side, $type, $quantity, $price, $orderId, $orderListId, $clientOrderId, $transactTime)
     {
 
