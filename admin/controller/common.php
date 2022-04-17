@@ -34,12 +34,92 @@ class Ds_bt_common
 	{
 		return '0red2ruc3xogwntDl658JYQaNJAjx8wRQSbSGILRvjRMeHiGEt9Y3dcqp6X5wHf0';
 	}
+	public function priceToTradeOnSingleCoin()
+	{
+		return 15;
+	}
+	public function depend_on_interval()
+	{
+		// return "5m";
+		return "15m";
+		// //1m3m5m15m30m1h2h4h6h8h12h1d3d1w1M
+	}
 
 	public function recvWindow()
 	{
 		return 60000;
 	}
+	public function baseAsset()
+	{
+		return "BUSD";
+		// return "USDT";
+	}
+	public function buyOrderBook($symbol, $amountToBuy, $baseAsset, $limit, $key)
+	{
 
+
+		$dbSymbol = self::getSymbolFromDB($symbol);
+
+		if ($dbSymbol) {
+			$orderBook = self::sendRequest("GET", "api/v3/depth?symbol=" . $symbol . $baseAsset . "&limit=$limit", $key); // get orderbook (BUY)
+			if ($orderBook['code'] == 200 || $orderBook['code'] == 201) {
+				$lastOnOrderBook = json_decode($orderBook['result'], true)['bids'][0][0];
+
+				$min_lot_size = $dbSymbol->min_lot_size;
+				
+				// $amountToBuy -= fmod($amountToBuy, $lastOnOrderBook); //$amountToBuy % $lastOnOrderBook;
+				$quantity = $amountToBuy / $lastOnOrderBook;
+echo " amountToBuy is $amountToBuy buyOrderBook $lastOnOrderBook  min_lot_size  $min_lot_size";
+//get index of one
+				// echo " quantity $quantity";
+				return array("quantity" =>$quantity, "lastOnOrderBook"=>$lastOnOrderBook, "min_lot_size"=>$min_lot_size);
+			}
+		}
+		return null;
+	}
+	public function scanCrypto($baseAsset)
+	{
+
+		$url = "https://scanner.tradingview.com/crypto/scan";
+
+		if (self::depend_on_interval() == "5m") {
+			//BUSD
+			$data = '{"filter":[{"left":"change|5","operation":"nempty"},{"left":"exchange","operation":"equal","right":"BINANCE"},{"left":"volume","operation":"in_range","right":[2000000,50000000]},{"left":"change|5","operation":"greater","right":0.1},{"left":"Recommend.All","operation":"nequal","right":0.1},{"left":"name,description","operation":"match","right":"' . $baseAsset . '"}],"options":{"lang":"en"},"filter2":{"operator":"and","operands":[{"operation":{"operator":"or","operands":[{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.1,0.5]}},{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.5,1]}}]}}]},"markets":["crypto"],"symbols":{"query":{"types":[]},"tickers":[]},"columns":["base_currency_logoid","currency_logoid","name","close","change","volume","Recommend.All","ask","exchange","change|5","change|15","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"change|5","sortOrder":"desc"},"range":[0,150]}';
+			// response is order by 5m change :- symbol, last price, change24 %, volume, tech rating 24, ask, exchange, change5m %, change15m %
+		} else if (self::depend_on_interval() == "15m") {
+			//BUSD
+			$data = '{"filter":[{"left":"change|15","operation":"nempty"},{"left":"exchange","operation":"equal","right":"BINANCE"},{"left":"volume","operation":"in_range","right":[2000000,50000000]},{"left":"change|15","operation":"greater","right":0.1},{"left":"Recommend.All","operation":"nequal","right":0.1},{"left":"name,description","operation":"match","right":"' . $baseAsset . '"}],"options":{"lang":"en"},"filter2":{"operator":"and","operands":[{"operation":{"operator":"or","operands":[{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.1,0.5]}},{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.5,1]}}]}}]},"markets":["crypto"],"symbols":{"query":{"types":[]},"tickers":[]},"columns":["base_currency_logoid","currency_logoid","name","close","change","volume","Recommend.All","ask","exchange","change|5","change|15","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"change|15","sortOrder":"desc"},"range":[0,150]}';
+			// response is order by 15m change :- symbol, last price, change24 %, volume, tech rating 24, ask, exchange, change5m %, change15m %
+		} else
+			return null;
+		// " Please choose correct BUSD_USDT and interval FIRST";
+
+		$response = self::postAPI($url, $data);
+
+		if ($response['code'] == 200 || $response['code'] == 201) {
+			return json_decode($response['result'], true);
+		}
+		return null;
+	}
+	function symbol_status($fullSymbol, $depend_on_interval)
+	{
+
+		$cmd = "python3 " . ds_bt_PLAGIN_DIR . 'admin/controller/recommendation/ta.py --symbol ' . $fullSymbol . ' --interval ' . $depend_on_interval;
+		$output = shell_exec($cmd);
+		// echo $output;
+		if (str_starts_with($output, "{'RECOMMENDATION': 'STRONG_BUY'")) {
+			return "STRONG_BUY";
+		} else if (str_starts_with($output, "{'RECOMMENDATION': 'BUY'"))
+			return "BUY";
+		else if (str_starts_with($output, "{'RECOMMENDATION': 'SELL'"))
+			return "SELL";
+		else if (str_starts_with($output, "{'RECOMMENDATION': 'STRONG_SELL'"))
+			return "STRONG_SELL";
+		else if (str_starts_with($output, "{'RECOMMENDATION': 'NEUTRAL'"))
+			return "NEUTRAL";
+		else
+			return $output;
+	}
 	public function order($symbol, $side, $type, $quantity, $price, $recvWindow, $key, $secret)
 	{
 		// place order, make sure API key and secret are set, recommend to test on testnet.
@@ -57,6 +137,15 @@ class Ds_bt_common
 
 		return $response;
 	}
+
+	function getSymbolFromDB($symbol)
+	{
+		global $table_prefix, $wpdb;
+		$wp_ds_bt_symbols_table = $table_prefix . "ds_bt_symbols";
+
+		return $wpdb->get_row("SELECT * FROM " . $wp_ds_bt_symbols_table . ' WHERE symbol="' . $symbol . '"');
+	}
+
 	function isSymbolsUpdated($key)
 	{
 		global $table_prefix, $wpdb;
@@ -67,8 +156,8 @@ class Ds_bt_common
 			if ($setting->value1 != date("d-m-y")) {
 				// once a day (by checking symbols_last_updated from setting)
 				// {
-				$exchangeInfos = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/exchangeInfo", $key);
-				$tickers = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/ticker/24hr", $key);
+				$exchangeInfos = self::sendRequest("GET", "api/v3/exchangeInfo", $key);
+				$tickers = self::sendRequest("GET", "api/v3/ticker/24hr", $key);
 
 				if (($exchangeInfos['code'] == 200 || $exchangeInfos['code'] == 201) && ($tickers['code'] == 200 || $tickers['code'] == 201)) {
 					$exchangeInfos = json_decode($exchangeInfos['result'], true);
@@ -235,6 +324,19 @@ class Ds_bt_common
 		return hash_hmac('sha256', $query_string, $secret);
 	}
 
+	public function myAccount($key, $secret)
+	{
+
+		// get account information, make sure API key and secret are set
+		$response = self::signedRequest('GET', 'api/v3/account', [], $key, $secret);
+		// echo json_encode($response);
+
+		if ($response['code'] == 200 || $response['code'] == 201) {
+
+			$response = json_decode($response['result'], true);
+		}
+		return null;
+	}
 
 	public static function postAPI($url, $data)
 	{

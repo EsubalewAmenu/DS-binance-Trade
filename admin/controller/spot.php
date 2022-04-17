@@ -29,8 +29,8 @@ class Ds_bt_spot
 
     public function main()
     {
-        $secret = 'tSicM8dB17cncJzmKt4PnGxMh1OXE8aIBnbMnyEnayVNlXpgJhLKjqTZlXZp7yDO';
-        $key = '0red2ruc3xogwntDl658JYQaNJAjx8wRQSbSGILRvjRMeHiGEt9Y3dcqp6X5wHf0';
+        $secret = '';
+        $key = '';
 
         if (isset($_GET['symbol']))
             $symbol = $_GET['symbol'];

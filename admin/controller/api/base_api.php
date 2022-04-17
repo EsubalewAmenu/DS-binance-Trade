@@ -93,4 +93,19 @@ class DS_bt_admin_base_api
             ));
         });
     }
+    function rest_check_trade1p()
+    {
+        add_action('rest_api_init', function () {
+            register_rest_route(ds_bt . '/v1', '/trade1p/spot', array(
+                'methods' => 'GET',
+                'callback' => function (WP_REST_Request $request) {
+                    $Ds_bt_trade1p = new Ds_bt_trade1p();
+                    $Ds_bt_trade1p->main();
+                },
+                'permission_callback' => function () {
+                    return true; //current_user_can('edit_others_posts');
+                }
+            ));
+        });
+    }
 }
