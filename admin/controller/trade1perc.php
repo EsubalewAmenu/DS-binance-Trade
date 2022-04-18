@@ -104,8 +104,10 @@ class Ds_bt_trade1p
 
 
         $response = $GLOBALS['Ds_bt_common']->scanCrypto($asset['asset']); // base (BUSD OR USDT)
+        // echo " res test is ";
         // print_r($response);
-        if (count($response)) {
+        // echo "end";
+        if (isset($response)) {
 
             // print_r($response['data']);
             foreach ($response['data'] as $symbol) {
@@ -138,14 +140,14 @@ class Ds_bt_trade1p
 
                         $buyOrderBook = $GLOBALS['Ds_bt_common']->buyOrderBook(substr($fullSymbol, 0, -4), $amountToBuy, $GLOBALS['Ds_bt_common']->baseAsset(), 5, $GLOBALS['Ds_bt_common']->api_key());
                         echo substr($fullSymbol, 0, -4)."   is ";
-                        print_r($buyOrderBook);
-
+                        // print_r($buyOrderBook);
+echo "quantity=" . $buyOrderBook['quantity']. " lastOnOrderBook=" . $buyOrderBook['lastOnOrderBook']. " amountToBuy=" . $buyOrderBook['amountToBuy'];
                             // break;
                             // self::save_trade($fullSymbol, "BUY", "SPOT", $quantity, $lastPrice, 'orderId', 'orderListId', 'clientOrderId', 'transactTime');
                     } else
                         echo $fullSymbol . " not bought RECOMMENDATION is " . $symbolRecomendation . "</br>\n";
                 }
             }
-        }
+        } echo "there is no good recommendation (not to buy at this time)</br>\n";
     }
 }

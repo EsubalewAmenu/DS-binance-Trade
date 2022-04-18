@@ -71,12 +71,31 @@ class Ds_bt_common
 				$quantity = $amountToBuy / $lastOnOrderBook;
 echo " amountToBuy is $amountToBuy buyOrderBook $lastOnOrderBook  min_lot_size  $min_lot_size";
 //get index of one
-				// echo " quantity $quantity";
-				return array("quantity" =>$quantity, "lastOnOrderBook"=>$lastOnOrderBook, "min_lot_size"=>$min_lot_size);
+$afterPoint = 0;
+for ($i=0; $i < strlen($min_lot_size)-1; $i++) { 
+	if($min_lot_size[$i] == '1'){
+		break;
+	}
+	else if($min_lot_size[$i] == '0')
+	$afterPoint++;
+}
+
+$quantity = self::floorDec($quantity, $afterPoint);
+				echo " afterPoint $afterPoint after float " . $quantity;
+				return array("quantity" =>$quantity, "lastOnOrderBook"=>$lastOnOrderBook, "amountToBuy"=>$amountToBuy);
 			}
 		}
 		return null;
 	}
+	function floorDec($val, $precision = 2) {
+		if ($precision < 0) { $precision = 0; }
+		$numPointPosition = intval(strpos($val, '.'));
+		if ($numPointPosition === 0) { //$val is an integer
+			return $val;
+		}
+		return floatval(substr($val, 0, $numPointPosition + $precision + 1));
+	}
+
 	public function scanCrypto($baseAsset)
 	{
 
