@@ -62,7 +62,10 @@ class Ds_bt_trade1p
     }
     public function checkOrderList()
     {
+        // GET /api/v3/openOrders 
         // if it tooks to long to buy, cancel
+
+        // DELETE /api/v3/order 
         // if it tooks to long to sell, cancel and order based on
     }
     public function checkAssets($myAssets)
@@ -94,6 +97,23 @@ class Ds_bt_trade1p
                 // get bought price
                 // order sell by adding 1% on bought price or current price
 
+                // /api/v3/trades
+                // symbol // body
+                // [
+//   {
+//     "id": 28457,
+//     "price": "4.00000100",
+//     "qty": "12.00000000",
+//     "quoteQty": "48.000012",
+//     "time": 1499865549590,
+//     "isBuyerMaker": true,
+//     "isBestMatch": true
+//   }
+// ]
+// foreach ($tradeHistories as $tradeHistory) {
+// if trade is buy
+// sell by adding 1 % on price column
+// }
             }
         }
     }
