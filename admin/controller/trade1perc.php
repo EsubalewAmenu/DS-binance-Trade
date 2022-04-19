@@ -92,7 +92,7 @@ class Ds_bt_trade1p
 
                 echo "Current price * free is " . ($asset['free'] * $dbSymbol->lastPrice) . " where asset['free'] is " . $asset['free'] . "dbSymbol->lastPrice price is " . $dbSymbol->lastPrice . "</br>/n";
                 // get bought price
-                // order sell by adding 1%
+                // order sell by adding 1% on bought price or current price
 
             }
         }
@@ -139,15 +139,16 @@ class Ds_bt_trade1p
 
 
                         $buyOrderBook = $GLOBALS['Ds_bt_common']->buyOrderBook(substr($fullSymbol, 0, -4), $amountToBuy, $GLOBALS['Ds_bt_common']->baseAsset(), 5, $GLOBALS['Ds_bt_common']->api_key());
-                        echo substr($fullSymbol, 0, -4)."   is ";
+                        echo substr($fullSymbol, 0, -4) . "   is ";
                         // print_r($buyOrderBook);
-echo "quantity=" . $buyOrderBook['quantity']. " lastOnOrderBook=" . $buyOrderBook['lastOnOrderBook']. " amountToBuy=" . $buyOrderBook['amountToBuy'];
-                            // break;
-                            // self::save_trade($fullSymbol, "BUY", "SPOT", $quantity, $lastPrice, 'orderId', 'orderListId', 'clientOrderId', 'transactTime');
+                        echo "quantity=" . $buyOrderBook['quantity'] . " lastOnOrderBook=" . $buyOrderBook['lastOnOrderBook'] . " amountToBuy=" . $buyOrderBook['amountToBuy'];
+                        // self::save_trade($fullSymbol, "BUY", "SPOT", $quantity, $lastPrice, 'orderId', 'orderListId', 'clientOrderId', 'transactTime');
+                        // break;
                     } else
                         echo $fullSymbol . " not bought RECOMMENDATION is " . $symbolRecomendation . "</br>\n";
                 }
             }
-        } echo "there is no good recommendation (not to buy at this time)</br>\n";
+        }
+        echo "there is no good recommendation (not to buy at this time)</br>\n";
     }
 }
