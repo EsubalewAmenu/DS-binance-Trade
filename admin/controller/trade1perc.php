@@ -52,6 +52,11 @@ class Ds_bt_trade1p
 
         self::checkOrderList();
 
+
+        $assetTEST['asset'] = "BSW";
+        $assetTEST['free'] = "20";
+                self::checkAndSell($assetTEST);
+
         $asset['asset'] = "BUSD";
         $asset['free'] = "20";
         self::checkAndBuy($asset);
@@ -78,25 +83,26 @@ class Ds_bt_trade1p
                 self::checkAndSell($asset);
             } else if ($asset['asset'] == "BUSD" || $asset['asset'] == "USDT") {
                 if ($asset['free'] > 13) {
-                    self::checkAndBuy($asset);
+                self::checkAndBuy($asset);
                 }
             }
         }
     }
     public function checkAndSell($asset)
     {
-        // echo "there is " . $asset['free'] . " free " . $asset['asset'] . " </br>/n";
+        echo "there is " . $asset['free'] . " free " . $asset['asset'] . " </br>/n";
 
         $dbSymbol = $GLOBALS['Ds_bt_common']->getSymbolFromDB($asset['asset']);
 
         if ($dbSymbol) {
 
-            if (($asset['free'] * $dbSymbol->lastPrice) > 11) {
+            // if (($asset['free'] * $dbSymbol->lastPrice) > 11) {
 
                 echo "Current price * free is " . ($asset['free'] * $dbSymbol->lastPrice) . " where asset['free'] is " . $asset['free'] . "dbSymbol->lastPrice price is " . $dbSymbol->lastPrice . "</br>/n";
                 // get bought price
                 // order sell by adding 1% on bought price or current price
-
+                $myTrades = $GLOBALS['Ds_bt_common']->myTrades($asset['asset'].$GLOBALS['Ds_bt_common']->baseAsset(), 5, $GLOBALS['Ds_bt_common']->api_key(), $GLOBALS['Ds_bt_common']->api_secret());
+                print_r($myTrades);
                 // /api/v3/trades
                 // symbol // body
                 // [
@@ -114,7 +120,7 @@ class Ds_bt_trade1p
 // if trade is buy
 // sell by adding 1 % on price column
 // }
-            }
+            // }
         }
     }
     public function checkAndBuy($asset)
@@ -168,7 +174,7 @@ class Ds_bt_trade1p
                         echo $fullSymbol . " not bought RECOMMENDATION is " . $symbolRecomendation . "</br>\n";
                 }
             }
-        }
+        }else
         echo "there is no good recommendation (not to buy at this time)</br>\n";
     }
 }

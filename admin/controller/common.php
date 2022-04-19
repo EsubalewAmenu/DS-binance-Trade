@@ -271,6 +271,28 @@ $quantity = self::floorDec($quantity, $afterPoint);
 
 			return json_decode($response['result'], true);
 		} else return array('error' => '45632');
+	}	
+	public function myTrades($symbol, $limit, $key, $secret)
+	{
+
+		// place order, make sure API key and secret are set, recommend to test on testnet.
+		$response = self::signedRequest('POST', 'api/v3/myTrades', [
+			'symbol' => $symbol,
+			// 'limit' => $limit,
+		], $key, $secret);
+
+		return $response;
+		// $query = self::buildQuery([
+		// 	'symbol' => $symbol,
+		// 	'limit' => $limit
+		// ]);
+
+		// $response = self::sendRequest("GET", "api/v3/?${query}", $key);
+
+		// if ($response['code'] == 200 || $response['code'] == 201) {
+
+		// 	return json_decode($response['result'], true);
+		// } else return array('error' => 'sdf');
 	}
 	public function getPrice($symbol, $key, $secret)
 	{
