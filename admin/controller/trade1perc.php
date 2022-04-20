@@ -53,17 +53,17 @@ class Ds_bt_trade1p
         self::checkOrderList();
 
 
-        $assetTEST['asset'] = "BSW";
-        $assetTEST['free'] = "20";
-        self::checkAndSell($assetTEST);
+        // $assetTEST['asset'] = "BSW";
+        // $assetTEST['free'] = "20";
+        // self::checkAndSell($assetTEST);
 
-        $asset['asset'] = "BUSD";
-        $asset['free'] = "20";
-        self::checkAndBuy($asset);
-        // $myAssets = $GLOBALS['Ds_bt_common']->myAccount($key, $secret);
-        // if ($myAssets) {
-        //     self::checkAssets($myAssets);
-        // }
+        // $asset['asset'] = "BUSD";
+        // $asset['free'] = "20";
+        // self::checkAndBuy($asset);
+        $myAssets = $GLOBALS['Ds_bt_common']->myAccount($key, $secret);
+        if ($myAssets) {
+            self::checkAssets($myAssets);
+        }
     }
     public function checkOrderList()
     {
@@ -136,8 +136,8 @@ class Ds_bt_trade1p
                         // order sell by price
                         // echo "price is $price lastPrice $lastPrice sellingPrice is " . $sellingPrice;
                         $type = "LIMIT";
-                        // $orderResult = $GLOBALS['Ds_bt_common']->order($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), "SELL", $type, $asset['free'], $sellingPrice, $GLOBALS['Ds_bt_common']->recvWindow(), $GLOBALS['Ds_bt_common']->api_key(), $GLOBALS['Ds_bt_common']->api_secret());
-                        // print_r($orderResult);
+                        $orderResult = $GLOBALS['Ds_bt_common']->order($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), "SELL", $type, $asset['free'], $sellingPrice, $GLOBALS['Ds_bt_common']->recvWindow(), $GLOBALS['Ds_bt_common']->api_key(), $GLOBALS['Ds_bt_common']->api_secret());
+                        print_r($orderResult);
                         break;
                     }
                 }
@@ -170,7 +170,7 @@ class Ds_bt_trade1p
                     $change15mPerc = $symbol['d'][10];
 
                     $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($fullSymbol, $GLOBALS['Ds_bt_common']->depend_on_interval());
-                    if ($symbolRecomendation == 'STRONG_BUY' || $symbolRecomendation == 'BUY') {
+                    if ($symbolRecomendation == 'STRONG_BUY') { //|| $symbolRecomendation == 'BUY') {
                         // &&  where currently i didn hold this coin
 
                         echo "reco is $symbolRecomendation Symbol = " . $fullSymbol . " lastPrice=" . $lastPrice . " 24h change=" . $change24Perc . " volume=" . $volume .
@@ -188,11 +188,11 @@ class Ds_bt_trade1p
                         $buyOrderBook = $GLOBALS['Ds_bt_common']->buyOrderBook(substr($fullSymbol, 0, -4), $amountToBuy, $GLOBALS['Ds_bt_common']->baseAsset(), 5, $GLOBALS['Ds_bt_common']->api_key());
                         echo substr($fullSymbol, 0, -4) . "   is ";
                         // print_r($buyOrderBook);
-                        echo "quantity=" . $buyOrderBook['quantity'] . " lastOnOrderBook=" . $buyOrderBook['lastOnOrderBook'] . " amountToBuy=" . $buyOrderBook['amountToBuy'];
+                        echo " quantity=" . $buyOrderBook['quantity'] . " lastOnOrderBook=" . $buyOrderBook['lastOnOrderBook'] . " amountToBuy=" . $buyOrderBook['amountToBuy'];
                         // self::save_trade($fullSymbol, "BUY", "SPOT", $quantity, $lastPrice, 'orderId', 'orderListId', 'clientOrderId', 'transactTime');
                         $type = "LIMIT";
-                        // $orderResult = $GLOBALS['Ds_bt_common']->order($fullSymbol, "BUY", $type, $buyOrderBook['quantity'], $buyOrderBook['lastOnOrderBook'], $GLOBALS['Ds_bt_common']->recvWindow(), $GLOBALS['Ds_bt_common']->api_key(), $GLOBALS['Ds_bt_common']->api_secret());
-                        // print_r($orderResult);
+                        $orderResult = $GLOBALS['Ds_bt_common']->order($fullSymbol, "BUY", $type, $buyOrderBook['quantity'], $buyOrderBook['lastOnOrderBook'], $GLOBALS['Ds_bt_common']->recvWindow(), $GLOBALS['Ds_bt_common']->api_key(), $GLOBALS['Ds_bt_common']->api_secret());
+                        print_r($orderResult);
                         break;
                     } else
                         echo $fullSymbol . " not bought RECOMMENDATION is " . $symbolRecomendation . "</br>\n";
