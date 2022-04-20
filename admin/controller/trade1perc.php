@@ -55,7 +55,7 @@ class Ds_bt_trade1p
 
         $assetTEST['asset'] = "BSW";
         $assetTEST['free'] = "20";
-                self::checkAndSell($assetTEST);
+        self::checkAndSell($assetTEST);
 
         $asset['asset'] = "BUSD";
         $asset['free'] = "20";
@@ -83,7 +83,7 @@ class Ds_bt_trade1p
                 self::checkAndSell($asset);
             } else if ($asset['asset'] == "BUSD" || $asset['asset'] == "USDT") {
                 if ($asset['free'] > 13) {
-                self::checkAndBuy($asset);
+                    self::checkAndBuy($asset);
                 }
             }
         }
@@ -98,29 +98,50 @@ class Ds_bt_trade1p
 
             // if (($asset['free'] * $dbSymbol->lastPrice) > 11) {
 
-                echo "Current price * free is " . ($asset['free'] * $dbSymbol->lastPrice) . " where asset['free'] is " . $asset['free'] . "dbSymbol->lastPrice price is " . $dbSymbol->lastPrice . "</br>/n";
-                // get bought price
-                // order sell by adding 1% on bought price or current price
-                $myTrades = $GLOBALS['Ds_bt_common']->myTrades($asset['asset'].$GLOBALS['Ds_bt_common']->baseAsset(), 5, $GLOBALS['Ds_bt_common']->api_key(), $GLOBALS['Ds_bt_common']->api_secret());
-                print_r($myTrades);
-                // /api/v3/trades
-                // symbol // body
-                // [
-//   {
-//     "id": 28457,
-//     "price": "4.00000100",
-//     "qty": "12.00000000",
-//     "quoteQty": "48.000012",
-//     "time": 1499865549590,
-//     "isBuyerMaker": true,
-//     "isBestMatch": true
-//   }
-// ]
-// foreach ($tradeHistories as $tradeHistory) {
-// if trade is buy
-// sell by adding 1 % on price column
-// }
-            // }
+            // echo "Current price * free is " . ($asset['free'] * $dbSymbol->lastPrice) . " where asset['free'] is " . $asset['free'] . "dbSymbol->lastPrice price is " . $dbSymbol->lastPrice . "</br>/n";
+            // get bought price
+            // order sell by adding 1% on bought price or current price
+            $myTrades = $GLOBALS['Ds_bt_common']->myTrades($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), 15, $GLOBALS['Ds_bt_common']->api_key(), $GLOBALS['Ds_bt_common']->api_secret());
+
+            if (isset($myTrades)) {
+                foreach ($myTrades as $myTrade) {
+                    // echo "myTrade is";
+                    // print_r($myTrade);
+                    // echo "price is".$myTrade->price;
+
+                    // $symbol  = $myTrade->symbol;
+                    // $id  = $myTrade->id;
+                    // $orderId  = $myTrade->orderId;
+                    // $orderListId  = $myTrade->orderListId;
+                    $price  = $myTrade->price;
+                    // $qty  = $myTrade->qty;
+                    // $quoteQty  = $myTrade->quoteQty;
+                    // $commission  = $myTrade->commission;
+                    // $commissionAsset  = $myTrade->commissionAsset;
+                    // $time  = $myTrade->time;
+                    $isBuyer  = $myTrade->isBuyer;
+                    // $isMaker  = $myTrade->isMaker;
+                    // $isBestMatch  = $myTrade->isBestMatch;
+
+                    if ($isBuyer) {
+                        // sell by adding 1 % on price column
+                        //get last price
+                        //take the grater and order sell by adding 1%
+                        $lastPrice = $GLOBALS['Ds_bt_common']->getPrice($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), $GLOBALS['Ds_bt_common']->api_key(), $GLOBALS['Ds_bt_common']->api_secret()); // price range
+                        if ($price > $lastPrice) {
+                            $sellingPrice = $price + (0.01 * $price);
+                        } else {
+                            $sellingPrice = $lastPrice + (0.01 * $lastPrice);
+                        }
+                        // order sell by price
+                        // echo "price is $price lastPrice $lastPrice sellingPrice is " . $sellingPrice;
+                        $type = "LIMIT";
+                        // $orderResult = $GLOBALS['Ds_bt_common']->order($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), "SELL", $type, $asset['free'], $sellingPrice, $GLOBALS['Ds_bt_common']->recvWindow(), $GLOBALS['Ds_bt_common']->api_key(), $GLOBALS['Ds_bt_common']->api_secret());
+                        // print_r($orderResult);
+                        break;
+                    }
+                }
+            }
         }
     }
     public function checkAndBuy($asset)
@@ -169,12 +190,15 @@ class Ds_bt_trade1p
                         // print_r($buyOrderBook);
                         echo "quantity=" . $buyOrderBook['quantity'] . " lastOnOrderBook=" . $buyOrderBook['lastOnOrderBook'] . " amountToBuy=" . $buyOrderBook['amountToBuy'];
                         // self::save_trade($fullSymbol, "BUY", "SPOT", $quantity, $lastPrice, 'orderId', 'orderListId', 'clientOrderId', 'transactTime');
-                        // break;
+                        $type = "LIMIT";
+                        // $orderResult = $GLOBALS['Ds_bt_common']->order($fullSymbol, "BUY", $type, $buyOrderBook['quantity'], $buyOrderBook['lastOnOrderBook'], $GLOBALS['Ds_bt_common']->recvWindow(), $GLOBALS['Ds_bt_common']->api_key(), $GLOBALS['Ds_bt_common']->api_secret());
+                        // print_r($orderResult);
+                        break;
                     } else
                         echo $fullSymbol . " not bought RECOMMENDATION is " . $symbolRecomendation . "</br>\n";
                 }
             }
-        }else
-        echo "there is no good recommendation (not to buy at this time)</br>\n";
+        } else
+            echo "there is no good recommendation (not to buy at this time)</br>\n";
     }
 }
