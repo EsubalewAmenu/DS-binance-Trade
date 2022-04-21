@@ -54,6 +54,15 @@ class Ds_bt_common
 		return "BUSD";
 		// return "USDT";
 	}
+	public function getDepth($symbol, $baseAsset, $limit, $key)
+	{
+		$response = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/depth?symbol=" . $symbol . $baseAsset . "&limit=$limit", $key); // get orderbook (BUY)
+		if ($response['code'] == 200 || $response['code'] == 201) {
+			$orderBook = json_decode($response['result'], true);
+			return array("buy_with" => $orderBook['bids'][0][0], "sell_by" => $orderBook['asks'][0][0]);
+		}
+		return null;
+	}
 	public function buyOrderBook($symbol, $amountToBuy, $baseAsset, $limit, $key)
 	{
 
@@ -69,7 +78,7 @@ class Ds_bt_common
 
 				// $amountToBuy -= fmod($amountToBuy, $lastOnOrderBook); //$amountToBuy % $lastOnOrderBook;
 				$quantity = $amountToBuy / $lastOnOrderBook;
-				echo " amountToBuy is $amountToBuy buyOrderBook $lastOnOrderBook  min_lot_size  $min_lot_size";
+				// echo " amountToBuy is $amountToBuy buyOrderBook $lastOnOrderBook  min_lot_size  $min_lot_size";
 				//get index of one
 				$afterPoint = 0;
 				for ($i = 0; $i < strlen($min_lot_size) - 1; $i++) {
@@ -143,6 +152,7 @@ class Ds_bt_common
 	}
 	public function order($symbol, $side, $type, $quantity, $price, $recvWindow, $key, $secret)
 	{
+		echo "order symbol $symbol side $side quantity $quantity price $price </br>\n";
 		// place order, make sure API key and secret are set, recommend to test on testnet.
 		$response = self::signedRequest('POST', 'api/v3/order', [
 			'symbol' => $symbol,
@@ -154,6 +164,18 @@ class Ds_bt_common
 			'recvWindow' => $recvWindow,
 			// 'newClientOrderId' => 'my_order', // optional
 			'newOrderRespType' => 'FULL' //optional
+		], $key, $secret);
+
+		return $response;
+	}
+	public function cancelOrder($symbol, $origClientOrderId, $key, $secret)
+	{
+		echo "cancel symbol $symbol origClientOrderId $origClientOrderId order </br>\n";
+		// place order, make sure API key and secret are set, recommend to test on testnet.
+		$response = self::signedRequest('DELETE', 'api/v3/order', [
+			'symbol' => $symbol,
+			"origClientOrderId" => $origClientOrderId,
+			'recvWindow' => self::recvWindow(),
 		], $key, $secret);
 
 		return $response;
@@ -363,11 +385,11 @@ class Ds_bt_common
 
 		// get account information, make sure API key and secret are set
 		$response = self::signedRequest('GET', 'api/v3/account', [], $key, $secret);
-		// echo json_encode($response);
+		// echo "json_encode " . json_encode($response);
 
 		if ($response['code'] == 200 || $response['code'] == 201) {
 
-			$response = json_decode($response['result'], true);
+			return json_decode($response['result'], true);
 		}
 		return null;
 	}

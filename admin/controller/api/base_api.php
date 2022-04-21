@@ -108,4 +108,19 @@ class DS_bt_admin_base_api
             ));
         });
     }
+    function rest_check_test()
+    {
+        add_action('rest_api_init', function () {
+            register_rest_route(ds_bt . '/v1', '/test', array(
+                'methods' => 'GET',
+                'callback' => function (WP_REST_Request $request) {
+                    $Ds_bt_test = new Ds_bt_test();
+                    $Ds_bt_test->main();
+                },
+                'permission_callback' => function () {
+                    return true; //current_user_can('edit_others_posts');
+                }
+            ));
+        });
+    }
 }
