@@ -31,7 +31,7 @@ class Ds_bt_test
     {
         $secret = $GLOBALS['Ds_bt_common']->api_secret();
         $key = $GLOBALS['Ds_bt_common']->api_key();
-        $symbol ="OM";
+        $symbol ="DODO";
 
         $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($symbol.'BUSD', $GLOBALS['Ds_bt_common']->depend_on_interval());
         

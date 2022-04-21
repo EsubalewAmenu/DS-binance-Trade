@@ -40,8 +40,8 @@ class Ds_bt_common
 	}
 	public function depend_on_interval()
 	{
-		// return "5m";
-		return "15m";
+		return "5m";
+		// return "15m";
 		// //1m3m5m15m30m1h2h4h6h8h12h1d3d1w1M
 	}
 
@@ -172,13 +172,30 @@ class Ds_bt_common
 	{
 		echo "cancel symbol $symbol origClientOrderId $origClientOrderId order </br>\n";
 		// place order, make sure API key and secret are set, recommend to test on testnet.
-		$response = self::signedRequest('DELETE', 'api/v3/order', [
+
+		$response = self::signedRequest('DELETE', 'api/v3/openOrders', [
 			'symbol' => $symbol,
-			"origClientOrderId" => $origClientOrderId,
+			// "origClientOrderId" => "myOrder1",//$origClientOrderId,
 			'recvWindow' => self::recvWindow(),
 		], $key, $secret);
 
-		return $response;
+		if ($response['code'] == 200 || $response['code'] == 201) {
+
+			$allOrders = json_decode($response['result'], true);
+			foreach ($allOrders as $order) {
+				echo "order is ";
+				echo "order1 is ".$order['orderId'];
+				$cancelResponse = self::signedRequest('DELETE', 'api/v3/order', [
+					'symbol' => $symbol,
+					"orderId" => $order['orderId'],
+					'recvWindow' => self::recvWindow(),
+				], $key, $secret);
+				// echo " response of cancel is ";
+				// print_r($cancelResponse);
+			}
+		}
+
+		return $response['code'];
 	}
 
 	function getSymbolFromDB($symbol)
