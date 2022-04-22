@@ -83,14 +83,14 @@ class Ds_bt_trade1p
                 self::checkAndSell($asset);
             } else if ($asset['asset'] == "BUSD" || $asset['asset'] == "USDT") {
                 if ($asset['free'] > 11) {
-                    echo $asset['asset'] . " buy started. free is " . $asset['free'];
+                    echo $asset['asset'] . " buy started. free is " . $asset['free'] . "\n";
                     self::checkAndBuy($asset);
                 }
             } else if ($asset['locked'] > 0 &&  $asset['asset'] != "BUSD" && $asset['asset'] != "USDT") {
                 $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), $GLOBALS['Ds_bt_common']->depend_on_interval());
                 echo $asset['asset'] . " locked=" . $asset['locked'] . " symbolRecomendation $symbolRecomendation</br>\n";
                 //if sell or strong sell
-                if ($symbolRecomendation == 'STRONG_SELL' || $symbolRecomendation == 'SELL' || $symbolRecomendation == 'NEUTRAL' || $symbolRecomendation == 'BUY') {
+                if ($symbolRecomendation == 'STRONG_SELL' || $symbolRecomendation == 'SELL') { // || $symbolRecomendation == 'NEUTRAL' ) {
 
                     $orderBook = $GLOBALS['Ds_bt_common']->getDepth($asset['asset'], $GLOBALS['Ds_bt_common']->baseAsset(), 2, $GLOBALS['Ds_bt_common']->api_key()); // get orderbook (BUY)
                     if (isset($orderBook['sell_by'])) {
@@ -100,19 +100,9 @@ class Ds_bt_trade1p
                         // and order with $orderBook['sell_by']
                         echo "order canceled WILL ORDER WITH " . $orderBook['sell_by'];
 
-                        // $dbSymbol = $GLOBALS['Ds_bt_common']->getSymbolFromDB($asset['asset']);
-
-                        // $afterPoint = 0;
-                        // for ($i = 0; $i < strlen($dbSymbol->precisionPrice) - 1; $i++) {
-                        //     if ($dbSymbol->precisionPrice[$i] == '1') {
-                        //         break;
-                        //     } else if ($dbSymbol->precisionPrice[$i] == '0')
-                        //         $afterPoint++;
-                        // }
-                        // $sellingPrice = $GLOBALS['Ds_bt_common']->floorDec($orderBook['sell_by'], $afterPoint);
-                        // $type = "LIMIT";
-                        // $orderResult = $GLOBALS['Ds_bt_common']->order($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), "SELL", $type, $asset['free'], $sellingPrice, $GLOBALS['Ds_bt_common']->recvWindow(), $GLOBALS['Ds_bt_common']->api_key(), $GLOBALS['Ds_bt_common']->api_secret());
-                        // print_r($orderResult);
+                        $type = "LIMIT";
+                        $orderResult = $GLOBALS['Ds_bt_common']->order($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), "SELL", $type, $asset['locked'], $orderBook['sell_by'], $GLOBALS['Ds_bt_common']->recvWindow(), $GLOBALS['Ds_bt_common']->api_key(), $GLOBALS['Ds_bt_common']->api_secret());
+                        print_r($orderResult);
                     }
                 }
             }
@@ -181,10 +171,20 @@ class Ds_bt_trade1p
                                     $afterPoint++;
                             }
                             $sellingPrice = $GLOBALS['Ds_bt_common']->floorDec($sellingPrice, $afterPoint);
+
+                            $quantityAfterPoint = 0;
+                            for ($i = 0; $i < strlen($dbSymbol->min_lot_size) - 1; $i++) {
+                                if ($dbSymbol->min_lot_size[$i] == '1') {
+                                    break;
+                                } else if ($dbSymbol->min_lot_size[$i] == '0')
+                                    $quantityAfterPoint++;
+                            }
+
+                            $freeQuantity = $GLOBALS['Ds_bt_common']->floorDec($asset['free'], $quantityAfterPoint);
                             // order sell by price
-                            // echo "price is $price lastPrice $lastPrice sellingPrice is " . $sellingPrice;
+                            echo "price is $price freeQuantity $freeQuantity sellingPrice is " . $sellingPrice;
                             $type = "LIMIT";
-                            $orderResult = $GLOBALS['Ds_bt_common']->order($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), "SELL", $type, $asset['free'], $sellingPrice, $GLOBALS['Ds_bt_common']->recvWindow(), $GLOBALS['Ds_bt_common']->api_key(), $GLOBALS['Ds_bt_common']->api_secret());
+                            $orderResult = $GLOBALS['Ds_bt_common']->order($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), "SELL", $type, $freeQuantity, $sellingPrice, $GLOBALS['Ds_bt_common']->recvWindow(), $GLOBALS['Ds_bt_common']->api_key(), $GLOBALS['Ds_bt_common']->api_secret());
                             print_r($orderResult);
                             break;
                         }
@@ -207,6 +207,8 @@ class Ds_bt_trade1p
 
             // print_r($response['data']);
             foreach ($response['data'] as $symbol) {
+            // print_r($symbol);
+
                 $fullSymbol = $symbol['d'][2];
                 if (str_ends_with($fullSymbol, $asset['asset'])) { //"BUSD")) {
                     $lastPrice = $symbol['d'][3];
@@ -243,6 +245,14 @@ class Ds_bt_trade1p
                             $type = "LIMIT";
                             $orderResult = $GLOBALS['Ds_bt_common']->order($fullSymbol, "BUY", $type, $buyOrderBook['quantity'], $buyOrderBook['lastOnOrderBook'], $GLOBALS['Ds_bt_common']->recvWindow(), $GLOBALS['Ds_bt_common']->api_key(), $GLOBALS['Ds_bt_common']->api_secret());
                             print_r($orderResult);
+
+                            global $table_prefix, $wpdb;
+                            $wp_ds_table = $table_prefix . "ds_bt_symbols";
+
+                            $data = ['lastPrice' => $buyOrderBook['lastOnOrderBook'],];
+                            $where = ['symbol' => substr($fullSymbol, 0, -4)];
+                            $wpdb->update($wp_ds_table, $data, $where);
+
                             break;
                         }
                     } else

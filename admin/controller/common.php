@@ -60,6 +60,7 @@ class Ds_bt_common
 		if ($response['code'] == 200 || $response['code'] == 201) {
 			$orderBook = json_decode($response['result'], true);
 			return array("buy_with" => $orderBook['bids'][0][0], "sell_by" => $orderBook['asks'][0][0]);
+			// return array("buy_with" => $orderBook['bids'][count($orderBook)-1][0], "sell_by" => $orderBook['asks'][count($orderBook)-1][0]);
 		}
 		return null;
 	}
@@ -72,7 +73,8 @@ class Ds_bt_common
 		if ($dbSymbol) {
 			$orderBook = self::sendRequest("GET", "api/v3/depth?symbol=" . $symbol . $baseAsset . "&limit=$limit", $key); // get orderbook (BUY)
 			if ($orderBook['code'] == 200 || $orderBook['code'] == 201) {
-				$lastOnOrderBook = json_decode($orderBook['result'], true)['bids'][0][0];
+				$lastOnOrderBook = json_decode($orderBook['result'], true);
+				$lastOnOrderBook = $lastOnOrderBook['bids'][count($lastOnOrderBook) - 1][0];
 
 				$min_lot_size = $dbSymbol->min_lot_size;
 
@@ -168,6 +170,24 @@ class Ds_bt_common
 
 		return $response;
 	}
+	// public function curl_del($symbol, $origClientOrderId)
+	// {
+	// 	$query = [
+	// 		'symbol' => $symbol,
+	// 		// "origClientOrderId" => "myOrder1",//$origClientOrderId,
+	// 		'recvWindow' => self::recvWindow(),
+	// 	];
+	// 	$signature = self::signature($query, self::api_secret());
+
+	// 	$url = "https://api.binance.com/api/v3/openOrders?${query}&signature=${signature}";
+	// 	$ch = curl_init();
+	// 	curl_setopt($ch, CURLOPT_URL, $url);
+	// 	curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+	// 	$result = curl_exec($ch);
+	// 	$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+	// 	curl_close($ch);
+	// 	return array("code" => $httpCode, "result" => $result);
+	// }
 	public function cancelOrder($symbol, $origClientOrderId, $key, $secret)
 	{
 		echo "cancel symbol $symbol origClientOrderId $origClientOrderId order </br>\n";
@@ -178,22 +198,22 @@ class Ds_bt_common
 			// "origClientOrderId" => "myOrder1",//$origClientOrderId,
 			'recvWindow' => self::recvWindow(),
 		], $key, $secret);
+		print_r($response);
+		// if ($response['code'] == 200 || $response['code'] == 201) {
 
-		if ($response['code'] == 200 || $response['code'] == 201) {
-
-			$allOrders = json_decode($response['result'], true);
-			foreach ($allOrders as $order) {
-				echo "order is ";
-				echo "order1 is ".$order['orderId'];
-				$cancelResponse = self::signedRequest('DELETE', 'api/v3/order', [
-					'symbol' => $symbol,
-					"orderId" => $order['orderId'],
-					'recvWindow' => self::recvWindow(),
-				], $key, $secret);
-				// echo " response of cancel is ";
-				// print_r($cancelResponse);
-			}
-		}
+		// 	$allOrders = json_decode($response['result'], true);
+		// 	foreach ($allOrders as $order) {
+		// 		echo "order is ";
+		// 		echo "order1 is " . $order['orderId'];
+		// 		$cancelResponse = self::signedRequest('DELETE', 'api/v3/order', [
+		// 			'symbol' => $symbol,
+		// 			"orderId" => $order['orderId'],
+		// 			'recvWindow' => self::recvWindow(),
+		// 		], $key, $secret);
+		// 		echo " response of cancel is ";
+		// 		print_r($cancelResponse);
+		// 	}
+		// }
 
 		return $response['code'];
 	}
@@ -225,7 +245,7 @@ class Ds_bt_common
 
 					// $count = 0;
 					foreach ($exchangeInfos['symbols'] as $symbol) {
-						if ($symbol['quoteAsset'] == 'BUSD') {
+						if ($symbol['quoteAsset'] == self::baseAsset()) {
 
 							foreach ($tickers as $ticker) {
 								if ($ticker['symbol'] == $symbol['symbol']) {
@@ -355,7 +375,10 @@ class Ds_bt_common
 		curl_setopt($ch, CURLOPT_HTTPHEADER, array('X-MBX-APIKEY:' . $key));
 		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
 		curl_setopt($ch, CURLOPT_URL, $url);
-		curl_setopt($ch, CURLOPT_POST, $method == "POST" ? true : false);
+		if ($method == "DELETE")
+			curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+		else
+			curl_setopt($ch, CURLOPT_POST, $method == "POST" ? true : false);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		$execResult = curl_exec($ch);
 		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);

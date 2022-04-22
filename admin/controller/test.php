@@ -33,10 +33,11 @@ class Ds_bt_test
         $key = $GLOBALS['Ds_bt_common']->api_key();
         $symbol ="DODO";
 
-        $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($symbol.'BUSD', $GLOBALS['Ds_bt_common']->depend_on_interval());
+        $cancelOrder = $GLOBALS['Ds_bt_common']->cancelOrder('BSW' . $GLOBALS['Ds_bt_common']->baseAsset(), time(), $GLOBALS['Ds_bt_common']->api_key(), $GLOBALS['Ds_bt_common']->api_secret());
+        // $cancelOrder = $GLOBALS['Ds_bt_common']->curl_del('BSW' . $GLOBALS['Ds_bt_common']->baseAsset(), time(), $GLOBALS['Ds_bt_common']->api_key(), $GLOBALS['Ds_bt_common']->api_secret());
         
-        echo "symbolRecomendation RESponse is</br>\n";
-        print_r($symbolRecomendation);
+        echo "cancelOrder RESponse is</br>\n";
+        print_r($cancelOrder);
 
         // // $orderBook = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/depth?symbol=" . $symbol . $GLOBALS['Ds_bt_common']->baseAsset() . "&limit=2", $key); // get orderbook (BUY)
         // $orderBook = $GLOBALS['Ds_bt_common']->getDepth($symbol, $GLOBALS['Ds_bt_common']->baseAsset(), 2, $key); // get orderbook (BUY)
