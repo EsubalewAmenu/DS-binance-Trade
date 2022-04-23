@@ -163,7 +163,6 @@ class Ds_bt_common
 	}
 	public function order($symbol, $side, $type, $quantity, $price, $recvWindow, $key, $secret)
 	{
-		echo "order symbol $symbol side $side quantity $quantity price $price </br>\n";
 		// place order, make sure API key and secret are set, recommend to test on testnet.
 		$response = self::signedRequest('POST', 'api/v3/order', [
 			'symbol' => $symbol,
@@ -176,21 +175,24 @@ class Ds_bt_common
 			// 'newClientOrderId' => 'my_order', // optional
 			'newOrderRespType' => 'FULL' //optional
 		], $key, $secret);
-
+		if ($response['code'] == 200 || $response['code'] == 201) {
+			$order = json_decode($response['result'], true);
+			return "order id " . $order['orderId'] . " symbol $symbol side $side origQty " . $order['origQty'] . " price " . $order['price'] . " </br>\n";
+		}
 		return $response;
 	}
-    public function cancelBuyOrdersIfTooksLong($openOrders)
-    {
-        foreach ($openOrders as $openOrder) {
-            if (abs(round(microtime(true) * 1000) - $openOrder['time']) > 120000 && $openOrder['side'] == 'BUY') {
-                //cancel order $openOrder['orderId']
-                echo 'order ' . $openOrder['symbol'] . " " . $openOrder['side'] . ' tooks too long CANCELED!\n';
+	public function cancelBuyOrdersIfTooksLong($openOrders)
+	{
+		foreach ($openOrders as $openOrder) {
+			if (abs(round(microtime(true) * 1000) - $openOrder['time']) > 120000 && $openOrder['side'] == 'BUY') {
+				//cancel order $openOrder['orderId']
+				echo 'order ' . $openOrder['symbol'] . " " . $openOrder['side'] . ' tooks too long CANCELED!\n';
 
-                $openOrders = self::cancelSingleOrder($openOrder['symbol'],  $openOrder['orderId']);
-                // print_r($openOrders);
-            }
-        }
-    }
+				$openOrders = self::cancelSingleOrder($openOrder['symbol'],  $openOrder['orderId']);
+				// print_r($openOrders);
+			}
+		}
+	}
 	public function openOrders()
 	{
 		$response = self::signedRequest('GET', 'api/v3/openOrders', [
@@ -247,22 +249,22 @@ class Ds_bt_common
 		return $response['code'];
 	}
 
-    public function isNotHold($asset, $myAssets)
-    {
+	public function isNotHold($asset, $myAssets)
+	{
 
-        foreach ($myAssets as $myAsset) {
-            if ($myAsset['asset'] == $asset) {
+		foreach ($myAssets as $myAsset) {
+			if ($myAsset['asset'] == $asset) {
 
-                $dbSymbol = self::getSymbolFromDB($asset);
+				$dbSymbol = self::getSymbolFromDB($asset);
 
-                $amount_holded = $myAsset['free'] + $myAsset['locked'];
+				$amount_holded = $myAsset['free'] + $myAsset['locked'];
 
-                if (($amount_holded * $dbSymbol->lastPrice) < 10)
-                    return true;
-            }
-        }
-        return false;
-    }
+				if (($amount_holded * $dbSymbol->lastPrice) < 10)
+					return true;
+			}
+		}
+		return false;
+	}
 	function getSymbolFromDB($symbol)
 	{
 		global $table_prefix, $wpdb;

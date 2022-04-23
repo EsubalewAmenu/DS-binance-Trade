@@ -214,6 +214,8 @@ class Ds_bt_trade1p
                     // $changeFromOpen = $symbol['d'][11];
 
                     $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($fullSymbol, $GLOBALS['Ds_bt_common']->depend_on_interval());
+                    echo $fullSymbol . " RECOMMENDATION is " . $symbolRecomendation . "</br>\n";
+
                     if ($symbolRecomendation == 'STRONG_BUY' || $symbolRecomendation == 'BUY') {
                         // &&  where currently i didn hold this coin
 
@@ -250,8 +252,7 @@ class Ds_bt_trade1p
                             if ($asset['free'] < $GLOBALS['Ds_bt_common']->priceToTradeOnSingleCoin())
                                 break;
                         }
-                    } else
-                        echo $fullSymbol . " not bought RECOMMENDATION is " . $symbolRecomendation . "</br>\n";
+                    }
                 }
             }
         } else
