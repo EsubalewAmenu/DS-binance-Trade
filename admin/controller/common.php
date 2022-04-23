@@ -56,7 +56,7 @@ class Ds_bt_common
 	}
 	public function getDepth($symbol, $baseAsset, $limit, $key)
 	{
-		$response = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/depth?symbol=" . $symbol . $baseAsset . "&limit=$limit", $key); // get orderbook (BUY)
+		$response = self::sendRequest("GET", "api/v3/depth?symbol=" . $symbol . $baseAsset . "&limit=$limit", $key); // get orderbook (BUY)
 		if ($response['code'] == 200 || $response['code'] == 201) {
 			$orderBook = json_decode($response['result'], true);
 			return array("buy_with" => $orderBook['bids'][0][0], "sell_by" => $orderBook['asks'][0][0]);
@@ -118,9 +118,9 @@ class Ds_bt_common
 			//buy strong, buy and nutral and filtered by changed from open above 0
 			$data = '{"filter":[{"left":"change|5","operation":"nempty"},{"left":"exchange","operation":"equal","right":"BINANCE"},{"left":"volume","operation":"in_range","right":[2000000,50000000]},{"left":"change|5","operation":"greater","right":0},{"left":"change_from_open","operation":"greater","right":0},{"left":"name,description","operation":"match","right":"' . $baseAsset . '"}],"options":{"lang":"en"},"filter2":{"operator":"and","operands":[{"operation":{"operator":"or","operands":[{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.1,0.5]}},{"expression":{"left":"Recommend.All","operation":"in_range","right":[-0.1,0.1]}},{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.5,1]}}]}}]},"markets":["crypto"],"symbols":{"query":{"types":[]},"tickers":[]},"columns":["base_currency_logoid","currency_logoid","name","close","change","volume","Recommend.All","ask","exchange","change|5","change|15","change_from_open","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"change|5","sortOrder":"desc"},"range":[0,150]}';
 			//buy strong buy sell and nutral and filtered by changed from open
- 			// $data = '{"filter":[{"left":"change|5","operation":"nempty"},{"left":"exchange","operation":"equal","right":"BINANCE"},{"left":"volume","operation":"in_range","right":[2000000,50000000]},{"left":"change|5","operation":"greater","right":0.1},{"left":"change_from_open","operation":"greater","right":0.1},{"left":"name,description","operation":"match","right":"' . $baseAsset . '"}],"options":{"lang":"en"},"filter2":{"operator":"and","operands":[{"operation":{"operator":"or","operands":[{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.1,0.5]}},{"expression":{"left":"Recommend.All","operation":"in_range","right":[-0.1,0.1]}},{"expression":{"left":"Recommend.All","operation":"in_range","right":[-0.5,-0.1]}},{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.5,1]}}]}}]},"markets":["crypto"],"symbols":{"query":{"types":[]},"tickers":[]},"columns":["base_currency_logoid","currency_logoid","name","close","change","volume","Recommend.All","ask","exchange","change|5","change|15","change_from_open","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"change|5","sortOrder":"desc"},"range":[0,150]}';			
+			// $data = '{"filter":[{"left":"change|5","operation":"nempty"},{"left":"exchange","operation":"equal","right":"BINANCE"},{"left":"volume","operation":"in_range","right":[2000000,50000000]},{"left":"change|5","operation":"greater","right":0.1},{"left":"change_from_open","operation":"greater","right":0.1},{"left":"name,description","operation":"match","right":"' . $baseAsset . '"}],"options":{"lang":"en"},"filter2":{"operator":"and","operands":[{"operation":{"operator":"or","operands":[{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.1,0.5]}},{"expression":{"left":"Recommend.All","operation":"in_range","right":[-0.1,0.1]}},{"expression":{"left":"Recommend.All","operation":"in_range","right":[-0.5,-0.1]}},{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.5,1]}}]}}]},"markets":["crypto"],"symbols":{"query":{"types":[]},"tickers":[]},"columns":["base_currency_logoid","currency_logoid","name","close","change","volume","Recommend.All","ask","exchange","change|5","change|15","change_from_open","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"change|5","sortOrder":"desc"},"range":[0,150]}';			
 			// only buy and strong buy
-// $data = '{"filter":[{"left":"change|5","operation":"nempty"},{"left":"exchange","operation":"equal","right":"BINANCE"},{"left":"volume","operation":"in_range","right":[2000000,50000000]},{"left":"change|5","operation":"greater","right":0.1},{"left":"Recommend.All","operation":"nequal","right":0.1},{"left":"name,description","operation":"match","right":"' . $baseAsset . '"}],"options":{"lang":"en"},"filter2":{"operator":"and","operands":[{"operation":{"operator":"or","operands":[{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.1,0.5]}},{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.5,1]}}]}}]},"markets":["crypto"],"symbols":{"query":{"types":[]},"tickers":[]},"columns":["base_currency_logoid","currency_logoid","name","close","change","volume","Recommend.All","ask","exchange","change|5","change|15","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"change|5","sortOrder":"desc"},"range":[0,150]}';
+			// $data = '{"filter":[{"left":"change|5","operation":"nempty"},{"left":"exchange","operation":"equal","right":"BINANCE"},{"left":"volume","operation":"in_range","right":[2000000,50000000]},{"left":"change|5","operation":"greater","right":0.1},{"left":"Recommend.All","operation":"nequal","right":0.1},{"left":"name,description","operation":"match","right":"' . $baseAsset . '"}],"options":{"lang":"en"},"filter2":{"operator":"and","operands":[{"operation":{"operator":"or","operands":[{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.1,0.5]}},{"expression":{"left":"Recommend.All","operation":"in_range","right":[0.5,1]}}]}}]},"markets":["crypto"],"symbols":{"query":{"types":[]},"tickers":[]},"columns":["base_currency_logoid","currency_logoid","name","close","change","volume","Recommend.All","ask","exchange","change|5","change|15","description","type","subtype","update_mode","pricescale","minmov","fractional","minmove2"],"sort":{"sortBy":"change|5","sortOrder":"desc"},"range":[0,150]}';
 
 			// response is order by 5m change :- symbol, last price, change24 %, volume, tech rating 24, ask, exchange, change5m %, change15m %
 		} else if (self::depend_on_interval() == "15m") {
@@ -179,24 +179,44 @@ class Ds_bt_common
 
 		return $response;
 	}
-	// public function curl_del($symbol, $origClientOrderId)
-	// {
-	// 	$query = [
-	// 		'symbol' => $symbol,
-	// 		// "origClientOrderId" => "myOrder1",//$origClientOrderId,
-	// 		'recvWindow' => self::recvWindow(),
-	// 	];
-	// 	$signature = self::signature($query, self::api_secret());
+    public function cancelBuyOrdersIfTooksLong($openOrders)
+    {
+        foreach ($openOrders as $openOrder) {
+            if (abs(round(microtime(true) * 1000) - $openOrder['time']) > 120000 && $openOrder['side'] == 'BUY') {
+                //cancel order $openOrder['orderId']
+                echo 'order ' . $openOrder['symbol'] . " " . $openOrder['side'] . ' tooks too long CANCELED!\n';
 
-	// 	$url = "https://api.binance.com/api/v3/openOrders?${query}&signature=${signature}";
-	// 	$ch = curl_init();
-	// 	curl_setopt($ch, CURLOPT_URL, $url);
-	// 	curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
-	// 	$result = curl_exec($ch);
-	// 	$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-	// 	curl_close($ch);
-	// 	return array("code" => $httpCode, "result" => $result);
-	// }
+                $openOrders = self::cancelSingleOrder($openOrder['symbol'],  $openOrder['orderId']);
+                // print_r($openOrders);
+            }
+        }
+    }
+	public function openOrders()
+	{
+		$response = self::signedRequest('GET', 'api/v3/openOrders', [
+			'recvWindow' => self::recvWindow(),
+		], self::api_key(), self::api_secret());
+		// print_r($response);
+		if ($response['code'] == 200 || $response['code'] == 201) {
+			return json_decode($response['result'], true);
+		}
+		return null;
+	}
+
+	public function cancelSingleOrder($symbol, $orderId)
+	{
+		$cancelResponse = self::signedRequest('DELETE', 'api/v3/order', [
+			'symbol' => $symbol,
+			"orderId" => $orderId,
+			'recvWindow' => self::recvWindow(),
+		], self::api_key(), self::api_secret());
+
+		if ($cancelResponse['code'] == 200 || $cancelResponse['code'] == 201) {
+			return json_decode($cancelResponse['result'], true);
+		}
+
+		return null;
+	}
 	public function cancelOrder($symbol, $origClientOrderId, $key, $secret)
 	{
 		echo "cancel symbol $symbol origClientOrderId $origClientOrderId order </br>\n";

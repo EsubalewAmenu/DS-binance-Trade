@@ -1,4 +1,5 @@
 <?php
+
 /**
  * The public-facing functionality of the plugin.
  *
@@ -31,21 +32,20 @@ class Ds_bt_test
     {
         $secret = $GLOBALS['Ds_bt_common']->api_secret();
         $key = $GLOBALS['Ds_bt_common']->api_key();
-        $symbol ="DODO";
+        $symbol = "DODO";
 
-        $cancelOrder = $GLOBALS['Ds_bt_common']->cancelOrder('BSW' . $GLOBALS['Ds_bt_common']->baseAsset(), time(), $GLOBALS['Ds_bt_common']->api_key(), $GLOBALS['Ds_bt_common']->api_secret());
-        // $cancelOrder = $GLOBALS['Ds_bt_common']->curl_del('BSW' . $GLOBALS['Ds_bt_common']->baseAsset(), time(), $GLOBALS['Ds_bt_common']->api_key(), $GLOBALS['Ds_bt_common']->api_secret());
-        
-        echo "cancelOrder RESponse is</br>\n";
-        print_r($cancelOrder);
+        $openOrders = $GLOBALS['Ds_bt_common']->openOrders();
 
-        // // $orderBook = $GLOBALS['Ds_bt_common']->sendRequest("GET", "api/v3/depth?symbol=" . $symbol . $GLOBALS['Ds_bt_common']->baseAsset() . "&limit=2", $key); // get orderbook (BUY)
-        // $orderBook = $GLOBALS['Ds_bt_common']->getDepth($symbol, $GLOBALS['Ds_bt_common']->baseAsset(), 2, $key); // get orderbook (BUY)
-        
-        // echo "orderBook RESponse is</br>\n";
-        // print_r($orderBook);
-        // echo "will sell by " .$orderBook['sell_by'] ;
+        // echo "openOrders RESponse is</br>\n";
+        // print_r($openOrders);
+        foreach ($openOrders as $openOrder) {
+            if (abs(round(microtime(true) * 1000) - $openOrder['time']) > 300000) { // && $openOrder['side'] == 'BUY') {
+                //cancel order $openOrder['orderId']
+                echo 'order ' . $openOrder['symbol'] . " " . $openOrder['side'] . ' tooks long WILL CANCEL\n';
 
-
+                $openOrders = $GLOBALS['Ds_bt_common']->cancelSingleOrder( $openOrder['symbol'],  $openOrder['orderId']);
+                print_r($openOrders);
+            }
+        }
     }
 }
