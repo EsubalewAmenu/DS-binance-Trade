@@ -90,7 +90,7 @@ class Ds_bt_trade1p
                 $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), $GLOBALS['Ds_bt_common']->depend_on_interval());
                 echo $asset['asset'] . " locked=" . $asset['locked'] . " symbolRecomendation $symbolRecomendation</br>\n";
                 //if sell or strong sell
-                if ($symbolRecomendation == 'STRONG_SELL' || $symbolRecomendation == 'SELL') { // || $symbolRecomendation == 'NEUTRAL' ) {
+                if ($symbolRecomendation == 'STRONG_SELL' || $symbolRecomendation == 'SELL' ) { // || $symbolRecomendation == 'NEUTRAL' ) {
 
                     $orderBook = $GLOBALS['Ds_bt_common']->getDepth($asset['asset'], $GLOBALS['Ds_bt_common']->baseAsset(), 2, $GLOBALS['Ds_bt_common']->api_key()); // get orderbook (BUY)
                     if (isset($orderBook['sell_by'])) {
@@ -219,9 +219,10 @@ class Ds_bt_trade1p
                     $exchange = $symbol['d'][8];
                     $change5mPerc = $symbol['d'][9];
                     $change15mPerc = $symbol['d'][10];
+                    $changeFromOpen = $symbol['d'][11];
 
                     $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($fullSymbol, $GLOBALS['Ds_bt_common']->depend_on_interval());
-                    if ($symbolRecomendation == 'STRONG_BUY') { //|| $symbolRecomendation == 'BUY') {
+                    if ($symbolRecomendation == 'STRONG_BUY' || $symbolRecomendation == 'BUY') {
                         // &&  where currently i didn hold this coin
 
                         echo "reco is $symbolRecomendation Symbol = " . $fullSymbol . " lastPrice=" . $lastPrice . " 24h change=" . $change24Perc . " volume=" . $volume .
