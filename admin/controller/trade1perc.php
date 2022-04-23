@@ -76,7 +76,7 @@ class Ds_bt_trade1p
             } else if ($asset['asset'] == "BUSD" || $asset['asset'] == "USDT") {
                 if ($asset['free'] > 11) {
                     echo $asset['asset'] . " buy started. free is " . $asset['free'] . "\n";
-                    self::checkAndBuy($asset);
+                    self::checkAndBuy($asset, $myAssets['balances']);
                 }
             } else if ($asset['locked'] > 0 &&  $asset['asset'] != "BUSD" && $asset['asset'] != "USDT") {
                 $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), $GLOBALS['Ds_bt_common']->depend_on_interval());
@@ -185,7 +185,7 @@ class Ds_bt_trade1p
             }
         }
     }
-    public function checkAndBuy($asset)
+    public function checkAndBuy($asset, $assets)
     {
 
         // echo "test";
@@ -202,7 +202,7 @@ class Ds_bt_trade1p
                 // print_r($symbol);
 
                 $fullSymbol = $symbol['d'][2];
-                if (str_ends_with($fullSymbol, $asset['asset'])) {
+                if ($GLOBALS['Ds_bt_common']->isNotHold(substr($fullSymbol, 0, -4), $assets)) {
                     // $lastPrice = $symbol['d'][3];
                     // $change24Perc = $symbol['d'][4];
                     // $volume = $symbol['d'][5];
@@ -247,8 +247,8 @@ class Ds_bt_trade1p
                             $wpdb->update($wp_ds_table, $data, $where);
 
                             $asset['free'] -= $amountToBuy;
-                            if($asset['free'] < $GLOBALS['Ds_bt_common']->priceToTradeOnSingleCoin())
-                            break;
+                            if ($asset['free'] < $GLOBALS['Ds_bt_common']->priceToTradeOnSingleCoin())
+                                break;
                         }
                     } else
                         echo $fullSymbol . " not bought RECOMMENDATION is " . $symbolRecomendation . "</br>\n";

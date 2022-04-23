@@ -247,6 +247,22 @@ class Ds_bt_common
 		return $response['code'];
 	}
 
+    public function isNotHold($asset, $myAssets)
+    {
+
+        foreach ($myAssets as $myAsset) {
+            if ($myAsset['asset'] == $asset) {
+
+                $dbSymbol = self::getSymbolFromDB($asset);
+
+                $amount_holded = $myAsset['free'] + $myAsset['locked'];
+
+                if (($amount_holded * $dbSymbol->lastPrice) < 10)
+                    return true;
+            }
+        }
+        return false;
+    }
 	function getSymbolFromDB($symbol)
 	{
 		global $table_prefix, $wpdb;
