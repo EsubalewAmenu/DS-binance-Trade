@@ -91,7 +91,7 @@ class Ds_bt_common
 				}
 
 				$quantity = self::floorDec($quantity, $afterPoint);
-				echo " afterPoint $afterPoint after float " . $quantity;
+				// echo " afterPoint $afterPoint after float " . $quantity;
 				return array("quantity" => $quantity, "lastOnOrderBook" => $lastOnOrderBook, "amountToBuy" => $amountToBuy);
 			}
 		}
