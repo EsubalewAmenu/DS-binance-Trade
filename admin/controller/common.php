@@ -26,6 +26,10 @@ class Ds_bt_common
 	public function __construct()
 	{
 	}
+	public function instantLoss5m()
+	{
+		return -0.7;
+	}
 	public function priceToTradeOnSingleCoin()
 	{
 		return 50;
@@ -51,7 +55,7 @@ class Ds_bt_common
 		$response = self::sendRequest("GET", "api/v3/depth?symbol=" . $symbol . $baseAsset . "&limit=$limit", $key); // get orderbook (BUY)
 		if ($response['code'] == 200 || $response['code'] == 201) {
 			$orderBook = json_decode($response['result'], true);
-			return array("buy_with" => $orderBook['bids'][0][0], "sell_by" => $orderBook['asks'][0][0]);
+			return array("buy_with" => $orderBook['bids'][$limit - 1][0], "sell_by" => $orderBook['asks'][$limit - 1][0]);
 			// return array("buy_with" => $orderBook['bids'][count($orderBook)-1][0], "sell_by" => $orderBook['asks'][count($orderBook)-1][0]);
 		}
 		return null;
@@ -89,23 +93,26 @@ class Ds_bt_common
 			$orderBook = self::sendRequest("GET", "api/v3/depth?symbol=" . $symbol . $baseAsset . "&limit=$limit", $key); // get orderbook (BUY)
 			if ($orderBook['code'] == 200 || $orderBook['code'] == 201) {
 				$lastOnOrderBook = json_decode($orderBook['result'], true);
-				$lastOnOrderBook = $lastOnOrderBook['bids'][count($lastOnOrderBook) - 1][0];
+				// print_r($lastOnOrderBook);
+				$lastOnOrderBook = $lastOnOrderBook['bids'][$limit - 1][0];
 
-				$min_lot_size = $dbSymbol->min_lot_size;
+				// $min_lot_size = $dbSymbol->min_lot_size;
 
 				// $amountToBuy -= fmod($amountToBuy, $lastOnOrderBook); //$amountToBuy % $lastOnOrderBook;
 				$quantity = $amountToBuy / $lastOnOrderBook;
 				// echo " amountToBuy is $amountToBuy buyOrderBook $lastOnOrderBook  min_lot_size  $min_lot_size";
 				//get index of one
-				$afterPoint = 0;
-				for ($i = 0; $i < strlen($min_lot_size) - 1; $i++) {
-					if ($min_lot_size[$i] == '1') {
-						break;
-					} else if ($min_lot_size[$i] == '0')
-						$afterPoint++;
-				}
+				// $afterPoint = 0;
+				// for ($i = 0; $i < strlen($min_lot_size) - 1; $i++) {
+				// 	if ($min_lot_size[$i] == '1') {
+				// 		break;
+				// 	} else if ($min_lot_size[$i] == '0')
+				// 		$afterPoint++;
+				// }
 
-				$quantity = self::floorDec($quantity, $afterPoint);
+				// $quantity = self::floorDec($quantity, $afterPoint);
+				$quantity = self::precisionQuantity($dbSymbol->min_lot_size, $quantity);
+
 				// echo " afterPoint $afterPoint after float " . $quantity;
 				return array("quantity" => $quantity, "lastOnOrderBook" => $lastOnOrderBook, "amountToBuy" => $amountToBuy);
 			}

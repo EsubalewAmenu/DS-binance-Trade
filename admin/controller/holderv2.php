@@ -57,19 +57,17 @@ class Ds_bt_holderv2
 
             if ($asset['free'] > 0 && $asset['asset'] != "BUSD" && $asset['asset'] != "USDT") {
                 self::checkAndSell($asset);
-            } else if ($asset['asset'] == "BUSD" || $asset['asset'] == "USDT") {
-                if ($asset['free'] > 11) {
-                    echo $asset['asset'] . " buy started to hold. free is " . $asset['free'] . "\n";
-                    self::checkAndBuy($asset, $myAssets['balances']);
-                }
+            } else if (($asset['asset'] == "BUSD" || $asset['asset'] == "USDT") && $asset['free'] > 11) {
+                echo $asset['asset'] . " buy started to hold. free is " . $asset['free'] . "\n";
+                self::checkAndBuy($asset, $myAssets['balances']);
             } else if ($asset['locked'] > 0 &&  $asset['asset'] != "BUSD" && $asset['asset'] != "USDT") {
                 $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), $GLOBALS['Ds_bt_common']->depend_on_interval());
                 $scanSingleCrypto = $GLOBALS['Ds_bt_common']->scanSingleCrypto($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset());
                 echo $asset['asset'] . " locked=" . $asset['locked'] . " symbolRecomendation $symbolRecomendation 5 min profit/loss " . $scanSingleCrypto['change5m'] . "</br>\n";
-                if ($scanSingleCrypto['change5m'] < -1 || $symbolRecomendation == 'STRONG_SELL' || $symbolRecomendation == 'SELL') { // || $symbolRecomendation == 'NEUTRAL' ) {
+                if ($scanSingleCrypto['change5m'] < $GLOBALS['Ds_bt_common']->instantLoss5m() || $symbolRecomendation == 'STRONG_SELL' || $symbolRecomendation == 'SELL') { // || $symbolRecomendation == 'NEUTRAL' ) {
 
                     $orderBook = $GLOBALS['Ds_bt_common']->getDepth($asset['asset'], $GLOBALS['Ds_bt_common']->baseAsset(), 2, self::api_key()); // get orderbook (BUY)
-                    if (isset($orderBook['sell_by'])) {
+                    if ($orderBook['sell_by'] > 0) {
                         $cancelOrder = $GLOBALS['Ds_bt_common']->cancelOrder($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), time(), self::api_key(), self::api_secret());
                         print_r($cancelOrder);
                         //cancel symbol orders 
@@ -93,10 +91,10 @@ class Ds_bt_holderv2
             if (($asset['free'] * $dbSymbol->lastPrice) > 11) {
                 $scanSingleCrypto = $GLOBALS['Ds_bt_common']->scanSingleCrypto($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset());
                 $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), $GLOBALS['Ds_bt_common']->depend_on_interval());
-                echo "</br>\n".$asset['asset'] . " free=" . $asset['free'] . " symbolRecom $symbolRecomendation scanSingle ".$scanSingleCrypto['change5m']."</br>\n";
+                echo "</br>\n" . $asset['asset'] . " free=" . $asset['free'] . " symbolRecom $symbolRecomendation scanSingle " . $scanSingleCrypto['change5m'] . "</br>\n";
                 // print_r($scanSingleCrypto);
                 //if sell or strong sell
-                if ($symbolRecomendation == 'STRONG_SELL' || $symbolRecomendation == 'SELL' || $symbolRecomendation == 'NEUTRAL') {
+                if ($scanSingleCrypto['change5m'] < $GLOBALS['Ds_bt_common']->instantLoss5m() || $symbolRecomendation == 'STRONG_SELL' || $symbolRecomendation == 'SELL') { // || $symbolRecomendation == 'NEUTRAL') {
 
                     $orderBook = $GLOBALS['Ds_bt_common']->getDepth($asset['asset'], $GLOBALS['Ds_bt_common']->baseAsset(), 2, self::api_key()); // get orderbook (BUY)
 
@@ -135,9 +133,13 @@ class Ds_bt_holderv2
     {
         $response = $GLOBALS['Ds_bt_common']->scanCrypto($asset['asset']); // base (BUSD OR USDT)
         if (isset($response)) {
+            $openOrders = $GLOBALS['Ds_bt_common']->openOrders(self::api_key(), self::api_secret());
             foreach ($response['data'] as $symbol) {
                 $fullSymbol = $symbol['d'][2];
-                if ($GLOBALS['Ds_bt_common']->isNotHold(substr($fullSymbol, 0, -4), $myAssets)) {
+                // if ($GLOBALS['Ds_bt_common']->isNotHold(substr($fullSymbol, 0, -4), $myAssets)) {
+                if (!$GLOBALS['Ds_bt_common']->isNotHold(substr($fullSymbol, 0, -4), $myAssets)) {
+                    echo $fullSymbol . " already on hold</br>\n";
+                } else if ($GLOBALS['Ds_bt_common']->isNotOnOrder($fullSymbol, $openOrders)) {
                     // $lastPrice = $symbol['d'][3];
                     // $change24Perc = $symbol['d'][4];
                     // $volume = $symbol['d'][5];

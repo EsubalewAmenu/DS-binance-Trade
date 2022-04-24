@@ -82,10 +82,10 @@ class Ds_bt_trade1p
                 $scanSingleCrypto = $GLOBALS['Ds_bt_common']->scanSingleCrypto($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset());
                 echo $asset['asset'] . " locked=" . $asset['locked'] . " symbolRecomendation $symbolRecomendation 5 min profit/loss " . $scanSingleCrypto['change5m'] . "</br>\n";
 
-                if ($scanSingleCrypto['change5m'] < -0.65 || $symbolRecomendation == 'STRONG_SELL' || $symbolRecomendation == 'SELL') { // || $symbolRecomendation == 'NEUTRAL' ) {
+                if ($scanSingleCrypto['change5m'] < $GLOBALS['Ds_bt_common']->instantLoss5m() || $symbolRecomendation == 'STRONG_SELL' || $symbolRecomendation == 'SELL') { // || $symbolRecomendation == 'NEUTRAL' ) {
 
-                    $orderBook = $GLOBALS['Ds_bt_common']->getDepth($asset['asset'], $GLOBALS['Ds_bt_common']->baseAsset(), 2, self::api_key()); // get orderbook (BUY)
-                    if (isset($orderBook['sell_by'])) {
+                    $orderBook = $GLOBALS['Ds_bt_common']->getDepth($asset['asset'], $GLOBALS['Ds_bt_common']->baseAsset(), 1, self::api_key()); // get orderbook (BUY)
+                    if ($orderBook['sell_by'] > 0) {
                         $cancelOrder = $GLOBALS['Ds_bt_common']->cancelOrder($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), time(), self::api_key(), self::api_secret());
                         print_r($cancelOrder);
                         //cancel symbol orders 
@@ -237,7 +237,7 @@ class Ds_bt_trade1p
                         }
 
 
-                        $buyOrderBook = $GLOBALS['Ds_bt_common']->buyOrderBook(substr($fullSymbol, 0, -4), $amountToBuy, $GLOBALS['Ds_bt_common']->baseAsset(), 5, self::api_key());
+                        $buyOrderBook = $GLOBALS['Ds_bt_common']->buyOrderBook(substr($fullSymbol, 0, -4), $amountToBuy, $GLOBALS['Ds_bt_common']->baseAsset(), 3, self::api_key());
                         if ($buyOrderBook['quantity'] > 0) {
                             // echo substr($fullSymbol, 0, -4) . "   is ";
                             // print_r($buyOrderBook);
