@@ -62,7 +62,7 @@ class Ds_bt_holderv2
             } else if ($asset['asset'] == "BUSD" || $asset['asset'] == "USDT") {
                 if ($asset['free'] > 11) {
                     echo $asset['asset'] . " buy started to hold. free is " . $asset['free'] . "\n";
-                    self::checkAndBuy($asset);
+                    self::checkAndBuy($asset, $myAssets['balances']);
                 }
             } else if ($asset['locked'] > 0 &&  $asset['asset'] != "BUSD" && $asset['asset'] != "USDT") {
                 $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), $GLOBALS['Ds_bt_common']->depend_on_interval());
@@ -96,7 +96,7 @@ class Ds_bt_holderv2
                 $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), $GLOBALS['Ds_bt_common']->depend_on_interval());
                 echo $asset['asset'] . " free=" . $asset['free'] . " symbolRecomendation $symbolRecomendation</br>\n";
                 //if sell or strong sell
-                if ($symbolRecomendation == 'STRONG_SELL' || $symbolRecomendation == 'SELL') { // || $symbolRecomendation == 'NEUTRAL' ) {
+                if ($symbolRecomendation == 'STRONG_SELL' || $symbolRecomendation == 'SELL' || $symbolRecomendation == 'NEUTRAL' ) {
 
                     $orderBook = $GLOBALS['Ds_bt_common']->getDepth($asset['asset'], $GLOBALS['Ds_bt_common']->baseAsset(), 2, $GLOBALS['Ds_bt_common']->api_key()); // get orderbook (BUY)
 
@@ -128,13 +128,13 @@ class Ds_bt_holderv2
             }
         }
     }
-    public function checkAndBuy($asset)
+    public function checkAndBuy($asset, $myAssets)
     {
         $response = $GLOBALS['Ds_bt_common']->scanCrypto($asset['asset']); // base (BUSD OR USDT)
         if (isset($response)) {
             foreach ($response['data'] as $symbol) {
                 $fullSymbol = $symbol['d'][2];
-                if (str_ends_with($fullSymbol, $asset['asset'])) {
+                if ($GLOBALS['Ds_bt_common']->isNotHold(substr($fullSymbol, 0, -4), $myAssets)) {
                     // $lastPrice = $symbol['d'][3];
                     // $change24Perc = $symbol['d'][4];
                     // $volume = $symbol['d'][5];

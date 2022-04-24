@@ -216,7 +216,7 @@ class Ds_bt_trade1p
                     $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($fullSymbol, $GLOBALS['Ds_bt_common']->depend_on_interval());
                     echo $fullSymbol . " RECOMMENDATION is " . $symbolRecomendation . "</br>\n";
 
-                    if ($symbolRecomendation == 'STRONG_BUY' || $symbolRecomendation == 'BUY') {
+                    if ($symbolRecomendation == 'STRONG_BUY' ) {//|| $symbolRecomendation == 'BUY') {
                         // &&  where currently i didn hold this coin
 
                         // echo "reco is $symbolRecomendation Symbol = " . $fullSymbol . " lastPrice=" . $lastPrice . " 24h change=" . $change24Perc . " volume=" . $volume .
