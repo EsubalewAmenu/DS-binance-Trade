@@ -7,4 +7,6 @@ const get = async () => {
 }
 setInterval(get, 60000)
 
-// export NODE_TLS_REJECT_UNAUTHORIZED='0'
+// to fix "Error: self signed certificate", run "export NODE_TLS_REJECT_UNAUTHORIZED='0'"
+
+// to fix "Error: Cannot find module 'axios'", run "npm install axios"
