@@ -54,7 +54,7 @@ class Ds_bt_holderv2
         foreach ($myAssets['balances'] as $asset) {
 
             if ($asset['free'] > 0 && $asset['asset'] != "BUSD" && $asset['asset'] != "USDT") {
-                self::checkAndSell($asset);
+                // self::checkAndSell($asset);
             } else if ($asset['asset'] == "BUSD" || $asset['asset'] == "USDT") {
                 if ($asset['free'] > 11) {
                     echo $asset['asset'] . " buy started to hold. free is " . $asset['free'] . "\n";
@@ -63,21 +63,21 @@ class Ds_bt_holderv2
             } else if ($asset['locked'] > 0 &&  $asset['asset'] != "BUSD" && $asset['asset'] != "USDT") {
                 $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), $GLOBALS['Ds_bt_common']->depend_on_interval());
                 echo $asset['asset'] . " locked=" . $asset['locked'] . " symbolRecomendation $symbolRecomendation</br>\n";
-                if ($symbolRecomendation == 'STRONG_SELL' || $symbolRecomendation == 'SELL') { // || $symbolRecomendation == 'NEUTRAL' ) {
+                // if ($symbolRecomendation == 'STRONG_SELL' || $symbolRecomendation == 'SELL') { // || $symbolRecomendation == 'NEUTRAL' ) {
 
-                    $orderBook = $GLOBALS['Ds_bt_common']->getDepth($asset['asset'], $GLOBALS['Ds_bt_common']->baseAsset(), 2, self::api_key()); // get orderbook (BUY)
-                    if (isset($orderBook['sell_by'])) {
-                        $cancelOrder = $GLOBALS['Ds_bt_common']->cancelOrder($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), time(), self::api_key(), self::api_secret());
-                        print_r($cancelOrder);
-                        //cancel symbol orders 
-                        // and order with $orderBook['sell_by']
-                        echo "order canceled WILL ORDER WITH " . $orderBook['sell_by'];
+                //     $orderBook = $GLOBALS['Ds_bt_common']->getDepth($asset['asset'], $GLOBALS['Ds_bt_common']->baseAsset(), 2, self::api_key()); // get orderbook (BUY)
+                //     if (isset($orderBook['sell_by'])) {
+                //         $cancelOrder = $GLOBALS['Ds_bt_common']->cancelOrder($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), time(), self::api_key(), self::api_secret());
+                //         print_r($cancelOrder);
+                //         //cancel symbol orders 
+                //         // and order with $orderBook['sell_by']
+                //         echo "order canceled WILL ORDER WITH " . $orderBook['sell_by'];
 
-                        $type = "LIMIT";
-                        $orderResult = $GLOBALS['Ds_bt_common']->order($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), "SELL", $type, $asset['locked'], $orderBook['sell_by'], $GLOBALS['Ds_bt_common']->recvWindow(), self::api_key(), self::api_secret());
-                        print_r($orderResult);
-                    }
-                }
+                //         $type = "LIMIT";
+                //         $orderResult = $GLOBALS['Ds_bt_common']->order($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), "SELL", $type, $asset['locked'], $orderBook['sell_by'], $GLOBALS['Ds_bt_common']->recvWindow(), self::api_key(), self::api_secret());
+                //         print_r($orderResult);
+                //     }
+                // }
             }
         }
     }
@@ -117,9 +117,10 @@ class Ds_bt_holderv2
 
                     $freeQuantity = $GLOBALS['Ds_bt_common']->floorDec($asset['free'], $quantityAfterPoint);
                     // order sell by price
+                    echo $asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(). " SELL freeQuantity ". $freeQuantity.' sellingPrice '. $sellingPrice.' total '. $freeQuantity*$sellingPrice;
                     $type = "LIMIT";
-                    $orderResult = $GLOBALS['Ds_bt_common']->order($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), "SELL", $type, $freeQuantity, $sellingPrice, $GLOBALS['Ds_bt_common']->recvWindow(), self::api_key(), self::api_secret());
-                    print_r($orderResult);
+                    // $orderResult = $GLOBALS['Ds_bt_common']->order($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), "SELL", $type, $freeQuantity, $sellingPrice, $GLOBALS['Ds_bt_common']->recvWindow(), self::api_key(), self::api_secret());
+                    // print_r($orderResult);
                 }
             }
         }
@@ -154,9 +155,10 @@ class Ds_bt_holderv2
 
                         $buyOrderBook = $GLOBALS['Ds_bt_common']->buyOrderBook(substr($fullSymbol, 0, -4), $amountToBuy, $GLOBALS['Ds_bt_common']->baseAsset(), 5, self::api_key());
                         if ($buyOrderBook['quantity'] > 0) {
+                            echo $fullSymbol. " BUY  quantity ". $buyOrderBook['quantity'].' lastOnOrderBook '.$buyOrderBook['lastOnOrderBook']. ' total ' .  $buyOrderBook['quantity']*$buyOrderBook['lastOnOrderBook'];
                             $type = "LIMIT";
-                            $orderResult = $GLOBALS['Ds_bt_common']->order($fullSymbol, "BUY", $type, $buyOrderBook['quantity'], $buyOrderBook['lastOnOrderBook'], $GLOBALS['Ds_bt_common']->recvWindow(), self::api_key(), self::api_secret());
-                            print_r($orderResult);
+                            // $orderResult = $GLOBALS['Ds_bt_common']->order($fullSymbol, "BUY", $type, $buyOrderBook['quantity'], $buyOrderBook['lastOnOrderBook'], $GLOBALS['Ds_bt_common']->recvWindow(), self::api_key(), self::api_secret());
+                            // print_r($orderResult);
 
                             global $table_prefix, $wpdb;
                             $wp_ds_table = $table_prefix . "ds_bt_symbols";
