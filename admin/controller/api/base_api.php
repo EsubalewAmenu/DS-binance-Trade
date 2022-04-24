@@ -108,6 +108,21 @@ class DS_bt_admin_base_api
             ));
         });
     }
+    function rest_check_holderv2()
+    {
+        add_action('rest_api_init', function () {
+            register_rest_route(ds_bt . '/v1', '/holderv2/spot', array(
+                'methods' => 'GET',
+                'callback' => function (WP_REST_Request $request) {
+                    $Ds_bt_holderv2 = new Ds_bt_holderv2();
+                    $Ds_bt_holderv2->main();
+                },
+                'permission_callback' => function () {
+                    return true; //current_user_can('edit_others_posts');
+                }
+            ));
+        });
+    }
     function rest_check_test()
     {
         add_action('rest_api_init', function () {
