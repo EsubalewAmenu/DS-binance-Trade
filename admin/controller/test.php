@@ -32,20 +32,16 @@ class Ds_bt_test
     {
         $secret = $GLOBALS['Ds_bt_common']->api_secret();
         $key = $GLOBALS['Ds_bt_common']->api_key();
-        $symbol = "DODO";
+        $symbol = "IOST";
 
-        $openOrders = $GLOBALS['Ds_bt_common']->openOrders();
+        $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($symbol . $GLOBALS['Ds_bt_common']->baseAsset(), $GLOBALS['Ds_bt_common']->depend_on_interval());
 
-        // echo "openOrders RESponse is</br>\n";
-        // print_r($openOrders);
-        foreach ($openOrders as $openOrder) {
-            if (abs(round(microtime(true) * 1000) - $openOrder['time']) > 300000) { // && $openOrder['side'] == 'BUY') {
-                //cancel order $openOrder['orderId']
-                echo 'order ' . $openOrder['symbol'] . " " . $openOrder['side'] . ' tooks long WILL CANCEL\n';
+        echo "openOrders RESponse is</br>\n";
+        print_r($symbolRecomendation);
+        
+        $symbolRecomendation = $GLOBALS['Ds_bt_common']->scanSingleCrypto($symbol . $GLOBALS['Ds_bt_common']->baseAsset());
 
-                $openOrders = $GLOBALS['Ds_bt_common']->cancelSingleOrder( $openOrder['symbol'],  $openOrder['orderId']);
-                print_r($openOrders);
-            }
-        }
+        echo "openOrders RESponse is</br>\n";
+        print_r($symbolRecomendation);
     }
 }

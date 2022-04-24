@@ -142,6 +142,33 @@ class Ds_bt_common
 		}
 		return null;
 	}
+	public function scanSingleCrypto($fullSymbol)
+	{
+
+		$url = "https://scanner.tradingview.com/crypto/scan";
+
+		$data = '{"filter":[{"left":"change|15","operation":"nempty"},{"left":"exchange","operation":"equal","right":"BINANCE"},{"left":"volume","operation":"eless","right":50000000},{"left":"name,description","operation":"match","right":"' . $fullSymbol . '"}],"options":{"lang":"en"},"markets":["crypto"],"symbols":{"query":{"types":[]},"tickers":[]},"columns":["base_currency_logoid","currency_logoid","name","change","change|5","change|15","change_from_open","exchange","description","type","subtype","update_mode"],"sort":{"sortBy":"change|15","sortOrder":"desc"},"range":[0,150]}';
+
+		$response = self::postAPI($url, $data);
+
+		if ($response['code'] == 200 || $response['code'] == 201) {
+			$singleResponses = json_decode($response['result'], true);
+
+			foreach ($singleResponses['data'] as $singleResponse) {
+				if ($singleResponse['d'][2] == $fullSymbol) {
+
+					return array(
+						'symbol' => $singleResponse['d'][2],
+						'change24' => $singleResponse['d'][3],
+						'change5m' => $singleResponse['d'][4],
+						'change15m' => $singleResponse['d'][5],
+						'change_from_open' => $singleResponse['d'][6]
+					);
+				}
+			}
+		}
+		return null;
+	}
 	function symbol_status($fullSymbol, $depend_on_interval)
 	{
 
