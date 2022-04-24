@@ -26,14 +26,6 @@ class Ds_bt_common
 	public function __construct()
 	{
 	}
-	public function api_secret()
-	{
-		return 'tSicM8dB17cncJzmKt4PnGxMh1OXE8aIBnbMnyEnayVNlXpgJhLKjqTZlXZp7yDO';
-	}
-	public function api_key()
-	{
-		return '0red2ruc3xogwntDl658JYQaNJAjx8wRQSbSGILRvjRMeHiGEt9Y3dcqp6X5wHf0';
-	}
 	public function priceToTradeOnSingleCoin()
 	{
 		return 15;
@@ -208,23 +200,23 @@ class Ds_bt_common
 		}
 		return $response;
 	}
-	public function cancelBuyOrdersIfTooksLong($openOrders)
+	public function cancelBuyOrdersIfTooksLong($openOrders, $api_key, $api_secret)
 	{
 		foreach ($openOrders as $openOrder) {
 			if (abs(round(microtime(true) * 1000) - $openOrder['time']) > 120000 && $openOrder['side'] == 'BUY') {
 				//cancel order $openOrder['orderId']
 				echo 'order ' . $openOrder['symbol'] . " " . $openOrder['side'] . ' tooks too long CANCELED!\n';
 
-				$openOrders = self::cancelSingleOrder($openOrder['symbol'],  $openOrder['orderId']);
+				$openOrders = self::cancelSingleOrder($openOrder['symbol'],  $openOrder['orderId'],$api_key, $api_secret);
 				// print_r($openOrders);
 			}
 		}
 	}
-	public function openOrders()
+	public function openOrders($api_key, $api_secret)
 	{
 		$response = self::signedRequest('GET', 'api/v3/openOrders', [
 			'recvWindow' => self::recvWindow(),
-		], self::api_key(), self::api_secret());
+		], $api_key, $api_secret);
 		// print_r($response);
 		if ($response['code'] == 200 || $response['code'] == 201) {
 			return json_decode($response['result'], true);
@@ -232,13 +224,13 @@ class Ds_bt_common
 		return null;
 	}
 
-	public function cancelSingleOrder($symbol, $orderId)
+	public function cancelSingleOrder($symbol, $orderId, $api_key, $api_secret)
 	{
 		$cancelResponse = self::signedRequest('DELETE', 'api/v3/order', [
 			'symbol' => $symbol,
 			"orderId" => $orderId,
 			'recvWindow' => self::recvWindow(),
-		], self::api_key(), self::api_secret());
+		], $api_key, $api_secret);
 
 		if ($cancelResponse['code'] == 200 || $cancelResponse['code'] == 201) {
 			return json_decode($cancelResponse['result'], true);
