@@ -47,7 +47,7 @@ class Ds_bt_trade1p
 
         // $trade_coin_volume = 3000000;
 
-        $GLOBALS['Ds_bt_common']->cancelBuyOrdersIfTooksLong($GLOBALS['Ds_bt_common']->openOrders(self::api_key(), self::api_secret()),self::api_key(), self::api_secret());
+        $GLOBALS['Ds_bt_common']->cancelBuyOrdersIfTooksLong($GLOBALS['Ds_bt_common']->openOrders(self::api_key(), self::api_secret()), self::api_key(), self::api_secret());
 
 
         // $assetTEST['asset'] = "BSW";
@@ -77,10 +77,12 @@ class Ds_bt_trade1p
                     self::checkAndBuy($asset, $myAssets['balances']);
                 }
             } else if ($asset['locked'] > 0 &&  $asset['asset'] != "BUSD" && $asset['asset'] != "USDT") {
+
                 $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), $GLOBALS['Ds_bt_common']->depend_on_interval());
-                echo $asset['asset'] . " locked=" . $asset['locked'] . " symbolRecomendation $symbolRecomendation</br>\n";
-                //if sell or strong sell
-                if ($symbolRecomendation == 'STRONG_SELL' || $symbolRecomendation == 'SELL') { // || $symbolRecomendation == 'NEUTRAL' ) {
+                $scanSingleCrypto = $GLOBALS['Ds_bt_common']->scanSingleCrypto($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset());
+                echo $asset['asset'] . " locked=" . $asset['locked'] . " symbolRecomendation $symbolRecomendation 5 min profit/loss " . $scanSingleCrypto['change5m'] . "</br>\n";
+
+                if ($scanSingleCrypto['change5m'] < -0.65 || $symbolRecomendation == 'STRONG_SELL' || $symbolRecomendation == 'SELL') { // || $symbolRecomendation == 'NEUTRAL' ) {
 
                     $orderBook = $GLOBALS['Ds_bt_common']->getDepth($asset['asset'], $GLOBALS['Ds_bt_common']->baseAsset(), 2, self::api_key()); // get orderbook (BUY)
                     if (isset($orderBook['sell_by'])) {
@@ -153,24 +155,26 @@ class Ds_bt_trade1p
                                 $sellingPrice = $orderBook['sell_by']; //$lastPrice + (0.005 * $lastPrice);
                             }
 
-                            $afterPoint = 0;
-                            for ($i = 0; $i < strlen($dbSymbol->precisionPrice) - 1; $i++) {
-                                if ($dbSymbol->precisionPrice[$i] == '1') {
-                                    break;
-                                } else if ($dbSymbol->precisionPrice[$i] == '0')
-                                    $afterPoint++;
-                            }
-                            $sellingPrice = $GLOBALS['Ds_bt_common']->floorDec($sellingPrice, $afterPoint);
+                            // $afterPoint = 0;
+                            // for ($i = 0; $i < strlen($dbSymbol->precisionPrice) - 1; $i++) {
+                            //     if ($dbSymbol->precisionPrice[$i] == '1') {
+                            //         break;
+                            //     } else if ($dbSymbol->precisionPrice[$i] == '0')
+                            //         $afterPoint++;
+                            // }
+                            // $sellingPrice = $GLOBALS['Ds_bt_common']->floorDec($sellingPrice, $afterPoint);
+                            $sellingPrice = $GLOBALS['Ds_bt_common']->precisionPrice($dbSymbol->precisionPrice, $sellingPrice);
 
-                            $quantityAfterPoint = 0;
-                            for ($i = 0; $i < strlen($dbSymbol->min_lot_size) - 1; $i++) {
-                                if ($dbSymbol->min_lot_size[$i] == '1') {
-                                    break;
-                                } else if ($dbSymbol->min_lot_size[$i] == '0')
-                                    $quantityAfterPoint++;
-                            }
+                            // $quantityAfterPoint = 0;
+                            // for ($i = 0; $i < strlen($dbSymbol->min_lot_size) - 1; $i++) {
+                            //     if ($dbSymbol->min_lot_size[$i] == '1') {
+                            //         break;
+                            //     } else if ($dbSymbol->min_lot_size[$i] == '0')
+                            //         $quantityAfterPoint++;
+                            // }
 
-                            $freeQuantity = $GLOBALS['Ds_bt_common']->floorDec($asset['free'], $quantityAfterPoint);
+                            // $freeQuantity = $GLOBALS['Ds_bt_common']->floorDec($asset['free'], $quantityAfterPoint);
+                            $freeQuantity = $GLOBALS['Ds_bt_common']->precisionQuantity($dbSymbol->min_lot_size, $asset['free']);
                             // order sell by price
                             // echo "price is $price freeQuantity $freeQuantity sellingPrice is " . $sellingPrice;
                             $type = "LIMIT";
@@ -188,19 +192,23 @@ class Ds_bt_trade1p
 
         // echo "test";
 
-
         $response = $GLOBALS['Ds_bt_common']->scanCrypto($asset['asset']); // base (BUSD OR USDT)
         // echo " res test is ";
         // print_r($response);
         // echo "end";
         if (isset($response)) {
 
+            $openOrders = $GLOBALS['Ds_bt_common']->openOrders(self::api_key(), self::api_secret());
+
+
             // print_r($response['data']);
             foreach ($response['data'] as $symbol) {
                 // print_r($symbol);
 
                 $fullSymbol = $symbol['d'][2];
-                if ($GLOBALS['Ds_bt_common']->isNotHold(substr($fullSymbol, 0, -4), $assets)) {
+                if (!$GLOBALS['Ds_bt_common']->isNotHold(substr($fullSymbol, 0, -4), $assets)) {
+                    echo $fullSymbol . " already on hold</br>\n";
+                } else if ($GLOBALS['Ds_bt_common']->isNotOnOrder($fullSymbol, $openOrders)) {
                     // $lastPrice = $symbol['d'][3];
                     // $change24Perc = $symbol['d'][4];
                     // $volume = $symbol['d'][5];
@@ -214,7 +222,7 @@ class Ds_bt_trade1p
                     $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($fullSymbol, $GLOBALS['Ds_bt_common']->depend_on_interval());
                     echo $fullSymbol . " RECOMMENDATION is " . $symbolRecomendation . "</br>\n";
 
-                    if ($symbolRecomendation == 'STRONG_BUY' ) {//|| $symbolRecomendation == 'BUY') {
+                    if ($symbolRecomendation == 'STRONG_BUY') { //|| $symbolRecomendation == 'BUY') {
                         // &&  where currently i didn hold this coin
 
                         // echo "reco is $symbolRecomendation Symbol = " . $fullSymbol . " lastPrice=" . $lastPrice . " 24h change=" . $change24Perc . " volume=" . $volume .
@@ -256,12 +264,12 @@ class Ds_bt_trade1p
         } else
             echo "there is no good recommendation (not to buy at this time)</br>\n";
     }
-	public function api_secret()
-	{
-		return 'tSicM8dB17cncJzmKt4PnGxMh1OXE8aIBnbMnyEnayVNlXpgJhLKjqTZlXZp7yDO';
-	}
-	public function api_key()
-	{
-		return '0red2ruc3xogwntDl658JYQaNJAjx8wRQSbSGILRvjRMeHiGEt9Y3dcqp6X5wHf0';
-	}
+    public function api_secret()
+    {
+        return 'tSicM8dB17cncJzmKt4PnGxMh1OXE8aIBnbMnyEnayVNlXpgJhLKjqTZlXZp7yDO';
+    }
+    public function api_key()
+    {
+        return '0red2ruc3xogwntDl658JYQaNJAjx8wRQSbSGILRvjRMeHiGEt9Y3dcqp6X5wHf0';
+    }
 }

@@ -28,7 +28,7 @@ class Ds_bt_common
 	}
 	public function priceToTradeOnSingleCoin()
 	{
-		return 15;
+		return 50;
 	}
 	public function depend_on_interval()
 	{
@@ -55,6 +55,29 @@ class Ds_bt_common
 			// return array("buy_with" => $orderBook['bids'][count($orderBook)-1][0], "sell_by" => $orderBook['asks'][count($orderBook)-1][0]);
 		}
 		return null;
+	}
+	public function precisionPrice($precisionPrice, $price)
+	{
+		$afterPoint = 0;
+		for ($i = 0; $i < strlen($precisionPrice) - 1; $i++) {
+			if ($precisionPrice[$i] == '1') {
+				break;
+			} else if ($precisionPrice[$i] == '0')
+				$afterPoint++;
+		}
+		return self::floorDec($price, $afterPoint);
+	}
+	public function precisionQuantity($min_lot_size, $amount)
+	{
+		$quantityAfterPoint = 0;
+		for ($i = 0; $i < strlen($min_lot_size) - 1; $i++) {
+			if ($min_lot_size[$i] == '1') {
+				break;
+			} else if ($min_lot_size[$i] == '0')
+				$quantityAfterPoint++;
+		}
+
+		return self::floorDec($amount, $quantityAfterPoint);
 	}
 	public function buyOrderBook($symbol, $amountToBuy, $baseAsset, $limit, $key)
 	{
@@ -159,7 +182,14 @@ class Ds_bt_common
 				}
 			}
 		}
-		return null;
+
+		return array(
+			'symbol' => $fullSymbol,
+			'change24' => 0,
+			'change5m' => 0,
+			'change15m' => 0,
+			'change_from_open' => 0
+		);
 	}
 	function symbol_status($fullSymbol, $depend_on_interval)
 	{
@@ -207,7 +237,7 @@ class Ds_bt_common
 				//cancel order $openOrder['orderId']
 				echo 'order ' . $openOrder['symbol'] . " " . $openOrder['side'] . ' tooks too long CANCELED!\n';
 
-				$openOrders = self::cancelSingleOrder($openOrder['symbol'],  $openOrder['orderId'],$api_key, $api_secret);
+				$openOrders = self::cancelSingleOrder($openOrder['symbol'],  $openOrder['orderId'], $api_key, $api_secret);
 				// print_r($openOrders);
 			}
 		}
@@ -266,6 +296,17 @@ class Ds_bt_common
 		// }
 
 		return $response['code'];
+	}
+
+	public function isNotOnOrder($fullSymbol, $openOrders)
+	{
+
+		foreach ($openOrders as $openOrder) {
+			if ($openOrder['symbol'] == $fullSymbol) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public function isNotHold($asset, $myAssets)

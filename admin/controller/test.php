@@ -30,9 +30,9 @@ class Ds_bt_test
 
     public function main()
     {
-        $secret = $GLOBALS['Ds_bt_common']->api_secret();
-        $key = $GLOBALS['Ds_bt_common']->api_key();
-        $symbol = "IOST";
+        $secret = self::api_secret();
+        $key = self::api_key();
+        $symbol = "BSW";
 
         $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($symbol . $GLOBALS['Ds_bt_common']->baseAsset(), $GLOBALS['Ds_bt_common']->depend_on_interval());
 
@@ -43,5 +43,13 @@ class Ds_bt_test
 
         echo "openOrders RESponse is</br>\n";
         print_r($symbolRecomendation);
+    }
+    public function api_secret()
+    {
+        return 'tSicM8dB17cncJzmKt4PnGxMh1OXE8aIBnbMnyEnayVNlXpgJhLKjqTZlXZp7yDO';
+    }
+    public function api_key()
+    {
+        return '0red2ruc3xogwntDl658JYQaNJAjx8wRQSbSGILRvjRMeHiGEt9Y3dcqp6X5wHf0';
     }
 }
