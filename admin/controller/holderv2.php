@@ -60,7 +60,8 @@ class Ds_bt_holderv2
             } else if (($asset['asset'] == "BUSD" || $asset['asset'] == "USDT") && $asset['free'] > 11) {
                 echo $asset['asset'] . " buy started to hold. free is " . $asset['free'] . "\n";
                 self::checkAndBuy($asset, $myAssets['balances']);
-            } else if ($asset['locked'] > 0 &&  $asset['asset'] != "BUSD" && $asset['asset'] != "USDT") {
+            }
+            if ($asset['locked'] > 0 &&  $asset['asset'] != "BUSD" && $asset['asset'] != "USDT") {
                 $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), $GLOBALS['Ds_bt_common']->depend_on_interval());
                 $scanSingleCrypto = $GLOBALS['Ds_bt_common']->scanSingleCrypto($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset());
                 echo $asset['asset'] . " locked=" . $asset['locked'] . " symbolRecomendation $symbolRecomendation 5 min profit/loss " . $scanSingleCrypto['change5m'] . "</br>\n";
