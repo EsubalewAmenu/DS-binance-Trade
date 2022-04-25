@@ -76,7 +76,8 @@ class Ds_bt_trade1p
                     echo $asset['asset'] . " buy started. free is " . $asset['free'] . "\n";
                     self::checkAndBuy($asset, $myAssets['balances']);
                 }
-            } else if ($asset['locked'] > 0 &&  $asset['asset'] != "BUSD" && $asset['asset'] != "USDT") {
+            }
+            if ($asset['locked'] > 0 &&  $asset['asset'] != "BUSD" && $asset['asset'] != "USDT") {
 
                 $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), $GLOBALS['Ds_bt_common']->depend_on_interval());
                 $scanSingleCrypto = $GLOBALS['Ds_bt_common']->scanSingleCrypto($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset());
