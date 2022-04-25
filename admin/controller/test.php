@@ -32,7 +32,7 @@ class Ds_bt_test
     {
         $secret = self::api_secret();
         $key = self::api_key();
-        $symbol = "BSW";
+        $symbol = "GMT";
 
         $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($symbol . $GLOBALS['Ds_bt_common']->baseAsset(), $GLOBALS['Ds_bt_common']->depend_on_interval());
 

@@ -32,7 +32,7 @@ class Ds_bt_common
 	}
 	public function priceToTradeOnSingleCoin()
 	{
-		return 50;
+		return 24;
 	}
 	public function depend_on_interval()
 	{

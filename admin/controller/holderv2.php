@@ -32,7 +32,7 @@ class Ds_bt_holderv2
 
     public function main()
     {
-        // $GLOBALS['Ds_bt_common']->cancelBuyOrdersIfTooksLong($GLOBALS['Ds_bt_common']->openOrders(self::api_key(), self::api_secret()), self::api_key(), self::api_secret());
+        $GLOBALS['Ds_bt_common']->cancelBuyOrdersIfTooksLong($GLOBALS['Ds_bt_common']->openOrders(self::api_key(), self::api_secret()), self::api_key(), self::api_secret());
 
         // echo " bought symbol STMXBUSD side BUY origQty 1567.00000000 price 0.01914000 </br>\N ";
         // $asset['asset'] = "STMX";
@@ -44,10 +44,10 @@ class Ds_bt_holderv2
         // $asset['free'] = "133.00000000";
         // self::checkAndSell($asset);
 
-        // $myAssets = $GLOBALS['Ds_bt_common']->myAccount(self::api_key(), self::api_secret());
-        // if ($myAssets) {
-        //     self::checkAssets($myAssets);
-        // }
+        $myAssets = $GLOBALS['Ds_bt_common']->myAccount(self::api_key(), self::api_secret());
+        if ($myAssets) {
+            self::checkAssets($myAssets);
+        }
     }
     public function checkAssets($myAssets)
     {
@@ -123,8 +123,79 @@ class Ds_bt_holderv2
                     // order sell by price
                     echo $asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset() . " SELL freeQuantity " . $freeQuantity . ' sellingPrice ' . $sellingPrice . ' total ' . $freeQuantity * $sellingPrice;
                     $type = "LIMIT";
-                    // $orderResult = $GLOBALS['Ds_bt_common']->order($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), "SELL", $type, $freeQuantity, $sellingPrice, $GLOBALS['Ds_bt_common']->recvWindow(), self::api_key(), self::api_secret());
-                    // print_r($orderResult);
+                    $orderResult = $GLOBALS['Ds_bt_common']->order($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), "SELL", $type, $freeQuantity, $sellingPrice, $GLOBALS['Ds_bt_common']->recvWindow(), self::api_key(), self::api_secret());
+                    print_r($orderResult);
+                } else {
+                    $myTrades = $GLOBALS['Ds_bt_common']->myTrades($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), 15, self::api_key(), self::api_secret());
+
+                    if (isset($myTrades)) {
+                        // foreach ($myTrades as $myTrade) {
+                        for ($i = count($myTrades) - 1; $i >= 0; $i--) {
+                            $myTrade = $myTrades[$i];
+                            // echo "myTrade is";
+                            // print_r($myTrade);
+                            // echo "price is".$myTrade->price;
+
+                            // $symbol  = $myTrade->symbol;
+                            // $id  = $myTrade->id;
+                            // $orderId  = $myTrade->orderId;
+                            // $orderListId  = $myTrade->orderListId;
+                            $price  = $myTrade->price;
+                            // $qty  = $myTrade->qty;
+                            // $quoteQty  = $myTrade->quoteQty;
+                            // $commission  = $myTrade->commission;
+                            // $commissionAsset  = $myTrade->commissionAsset;
+                            // $time  = $myTrade->time;
+                            $isBuyer  = $myTrade->isBuyer;
+                            // $isMaker  = $myTrade->isMaker;
+                            // $isBestMatch  = $myTrade->isBestMatch;
+
+                            if ($isBuyer) {
+                                // sell by adding 1 % on price column
+                                //get last price
+                                //take the grater and order sell by adding 1%
+                                // $lastPrice = $GLOBALS['Ds_bt_common']->getPrice($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), self::api_key(), self::api_secret()); // price range
+                                // if ($price > $lastPrice) {
+                                //     $sellingPrice = $price + (0.005 * $price);
+                                // } else {
+                                //     $sellingPrice = $lastPrice + (0.005 * $lastPrice);
+                                // }
+                                $orderBook = $GLOBALS['Ds_bt_common']->getDepth($asset['asset'], $GLOBALS['Ds_bt_common']->baseAsset(), 2, self::api_key()); // get orderbook (BUY)
+
+                                $sellingPrice = $price + (0.02 * $price);
+                                if ($sellingPrice <= $orderBook['sell_by']) {
+                                    $sellingPrice = $orderBook['sell_by'] + (0.02 * $orderBook['sell_by']);
+                                }
+
+                                // $afterPoint = 0;
+                                // for ($i = 0; $i < strlen($dbSymbol->precisionPrice) - 1; $i++) {
+                                //     if ($dbSymbol->precisionPrice[$i] == '1') {
+                                //         break;
+                                //     } else if ($dbSymbol->precisionPrice[$i] == '0')
+                                //         $afterPoint++;
+                                // }
+                                // $sellingPrice = $GLOBALS['Ds_bt_common']->floorDec($sellingPrice, $afterPoint);
+                                $sellingPrice = $GLOBALS['Ds_bt_common']->precisionPrice($dbSymbol->precisionPrice, $sellingPrice);
+
+                                // $quantityAfterPoint = 0;
+                                // for ($i = 0; $i < strlen($dbSymbol->min_lot_size) - 1; $i++) {
+                                //     if ($dbSymbol->min_lot_size[$i] == '1') {
+                                //         break;
+                                //     } else if ($dbSymbol->min_lot_size[$i] == '0')
+                                //         $quantityAfterPoint++;
+                                // }
+
+                                // $freeQuantity = $GLOBALS['Ds_bt_common']->floorDec($asset['free'], $quantityAfterPoint);
+                                $freeQuantity = $GLOBALS['Ds_bt_common']->precisionQuantity($dbSymbol->min_lot_size, $asset['free']);
+                                // order sell by price
+                                // echo "price is $price freeQuantity $freeQuantity sellingPrice is " . $sellingPrice;
+                                $type = "LIMIT";
+                                $orderResult = $GLOBALS['Ds_bt_common']->order($asset['asset'] . $GLOBALS['Ds_bt_common']->baseAsset(), "SELL", $type, $freeQuantity, $sellingPrice, $GLOBALS['Ds_bt_common']->recvWindow(), self::api_key(), self::api_secret());
+                                print_r($orderResult);
+                                break;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -163,10 +234,10 @@ class Ds_bt_holderv2
 
                         $buyOrderBook = $GLOBALS['Ds_bt_common']->buyOrderBook(substr($fullSymbol, 0, -4), $amountToBuy, $GLOBALS['Ds_bt_common']->baseAsset(), 5, self::api_key());
                         if ($buyOrderBook['quantity'] > 0) {
-                            echo $fullSymbol . " BUY  quantity " . $buyOrderBook['quantity'] . ' lastOnOrderBook ' . $buyOrderBook['lastOnOrderBook'] . ' total ' .  $buyOrderBook['quantity'] * $buyOrderBook['lastOnOrderBook'];
+                            // echo $fullSymbol . " BUY  quantity " . $buyOrderBook['quantity'] . ' lastOnOrderBook ' . $buyOrderBook['lastOnOrderBook'] . ' total ' .  $buyOrderBook['quantity'] * $buyOrderBook['lastOnOrderBook'];
                             $type = "LIMIT";
-                            // $orderResult = $GLOBALS['Ds_bt_common']->order($fullSymbol, "BUY", $type, $buyOrderBook['quantity'], $buyOrderBook['lastOnOrderBook'], $GLOBALS['Ds_bt_common']->recvWindow(), self::api_key(), self::api_secret());
-                            // print_r($orderResult);
+                            $orderResult = $GLOBALS['Ds_bt_common']->order($fullSymbol, "BUY", $type, $buyOrderBook['quantity'], $buyOrderBook['lastOnOrderBook'], $GLOBALS['Ds_bt_common']->recvWindow(), self::api_key(), self::api_secret());
+                            print_r($orderResult);
 
                             global $table_prefix, $wpdb;
                             $wp_ds_table = $table_prefix . "ds_bt_symbols";
