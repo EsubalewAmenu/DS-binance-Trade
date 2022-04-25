@@ -208,51 +208,52 @@ class Ds_bt_holderv2
             $openOrders = $GLOBALS['Ds_bt_common']->openOrders(self::api_key(), self::api_secret());
             foreach ($response['data'] as $symbol) {
                 $fullSymbol = $symbol['d'][2];
-                // if ($GLOBALS['Ds_bt_common']->isNotHold(substr($fullSymbol, 0, -4), $myAssets)) {
-                if (!$GLOBALS['Ds_bt_common']->isNotHold(substr($fullSymbol, 0, -4), $myAssets)) {
-                    echo $fullSymbol . " already on hold</br>\n";
-                } else if ($GLOBALS['Ds_bt_common']->isNotOnOrder($fullSymbol, $openOrders)) {
-                    // $lastPrice = $symbol['d'][3];
-                    // $change24Perc = $symbol['d'][4];
-                    // $volume = $symbol['d'][5];
-                    // $techRate24 = $symbol['d'][6];
-                    // $ask = $symbol['d'][7];
-                    // $exchange = $symbol['d'][8];
-                    // $change5mPerc = $symbol['d'][9];
-                    // $change15mPerc = $symbol['d'][10];
-                    // $changeFromOpen = $symbol['d'][11];
+                if (str_ends_with($fullSymbol, $asset['asset'])) {
+                    if (!$GLOBALS['Ds_bt_common']->isNotHold(substr($fullSymbol, 0, -4), $myAssets)) {
+                        echo $fullSymbol . " already on hold</br>\n";
+                    } else if ($GLOBALS['Ds_bt_common']->isNotOnOrder($fullSymbol, $openOrders)) {
+                        // $lastPrice = $symbol['d'][3];
+                        // $change24Perc = $symbol['d'][4];
+                        // $volume = $symbol['d'][5];
+                        // $techRate24 = $symbol['d'][6];
+                        // $ask = $symbol['d'][7];
+                        // $exchange = $symbol['d'][8];
+                        // $change5mPerc = $symbol['d'][9];
+                        // $change15mPerc = $symbol['d'][10];
+                        // $changeFromOpen = $symbol['d'][11];
 
-                    $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($fullSymbol, $GLOBALS['Ds_bt_common']->depend_on_interval());
+                        $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($fullSymbol, $GLOBALS['Ds_bt_common']->depend_on_interval());
 
-                    if ($symbolRecomendation == 'STRONG_BUY') { // || $symbolRecomendation == 'BUY') {
+                        if ($symbolRecomendation == 'STRONG_BUY') { // || $symbolRecomendation == 'BUY') {
 
-                        if ($asset['free'] > $GLOBALS['Ds_bt_common']->priceToTradeOnSingleCoin() * 2) {
-                            $amountToBuy = $GLOBALS['Ds_bt_common']->priceToTradeOnSingleCoin();
-                        } else {
-                            $amountToBuy = $asset['free'];
-                        }
+                            if ($asset['free'] > $GLOBALS['Ds_bt_common']->priceToTradeOnSingleCoin() * 2) {
+                                $amountToBuy = $GLOBALS['Ds_bt_common']->priceToTradeOnSingleCoin();
+                            } else {
+                                $amountToBuy = $asset['free'];
+                            }
 
 
-                        $buyOrderBook = $GLOBALS['Ds_bt_common']->buyOrderBook(substr($fullSymbol, 0, -4), $amountToBuy, $GLOBALS['Ds_bt_common']->baseAsset(), 5, self::api_key());
-                        if ($buyOrderBook['quantity'] > 0) {
-                            // echo $fullSymbol . " BUY  quantity " . $buyOrderBook['quantity'] . ' lastOnOrderBook ' . $buyOrderBook['lastOnOrderBook'] . ' total ' .  $buyOrderBook['quantity'] * $buyOrderBook['lastOnOrderBook'];
-                            $type = "LIMIT";
-                            $orderResult = $GLOBALS['Ds_bt_common']->order($fullSymbol, "BUY", $type, $buyOrderBook['quantity'], $buyOrderBook['lastOnOrderBook'], $GLOBALS['Ds_bt_common']->recvWindow(), self::api_key(), self::api_secret());
-                            print_r($orderResult);
+                            $buyOrderBook = $GLOBALS['Ds_bt_common']->buyOrderBook(substr($fullSymbol, 0, -4), $amountToBuy, $GLOBALS['Ds_bt_common']->baseAsset(), 5, self::api_key());
+                            if ($buyOrderBook['quantity'] > 0) {
+                                // echo $fullSymbol . " BUY  quantity " . $buyOrderBook['quantity'] . ' lastOnOrderBook ' . $buyOrderBook['lastOnOrderBook'] . ' total ' .  $buyOrderBook['quantity'] * $buyOrderBook['lastOnOrderBook'];
+                                $type = "LIMIT";
+                                $orderResult = $GLOBALS['Ds_bt_common']->order($fullSymbol, "BUY", $type, $buyOrderBook['quantity'], $buyOrderBook['lastOnOrderBook'], $GLOBALS['Ds_bt_common']->recvWindow(), self::api_key(), self::api_secret());
+                                print_r($orderResult);
 
-                            global $table_prefix, $wpdb;
-                            $wp_ds_table = $table_prefix . "ds_bt_symbols";
+                                global $table_prefix, $wpdb;
+                                $wp_ds_table = $table_prefix . "ds_bt_symbols";
 
-                            $data = ['lastPrice' => $buyOrderBook['lastOnOrderBook'],];
-                            $where = ['symbol' => substr($fullSymbol, 0, -4)];
-                            $wpdb->update($wp_ds_table, $data, $where);
+                                $data = ['lastPrice' => $buyOrderBook['lastOnOrderBook'],];
+                                $where = ['symbol' => substr($fullSymbol, 0, -4)];
+                                $wpdb->update($wp_ds_table, $data, $where);
 
-                            $asset['free'] -= $amountToBuy;
-                            if ($asset['free'] < $GLOBALS['Ds_bt_common']->priceToTradeOnSingleCoin())
-                                break;
-                        }
-                    } else
-                        echo $fullSymbol . " not bought RECOMMENDATION is " . $symbolRecomendation . "</br>\n";
+                                $asset['free'] -= $amountToBuy;
+                                if ($asset['free'] < $GLOBALS['Ds_bt_common']->priceToTradeOnSingleCoin())
+                                    break;
+                            }
+                        } else
+                            echo $fullSymbol . " not bought RECOMMENDATION is " . $symbolRecomendation . "</br>\n";
+                    }
                 }
             }
         } else

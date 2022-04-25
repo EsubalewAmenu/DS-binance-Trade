@@ -47,7 +47,8 @@ class Ds_bt_trade1p
 
         // $trade_coin_volume = 3000000;
 
-        $GLOBALS['Ds_bt_common']->cancelBuyOrdersIfTooksLong($GLOBALS['Ds_bt_common']->openOrders(self::api_key(), self::api_secret()), self::api_key(), self::api_secret());
+        $GLOBALS['openOrders'] = $GLOBALS['Ds_bt_common']->openOrders(self::api_key(), self::api_secret());
+        $GLOBALS['Ds_bt_common']->cancelBuyOrdersIfTooksLong($GLOBALS['openOrders'], self::api_key(), self::api_secret());
 
 
         // $assetTEST['asset'] = "BSW";
@@ -199,7 +200,7 @@ class Ds_bt_trade1p
         // echo "end";
         if (isset($response)) {
 
-            $openOrders = $GLOBALS['Ds_bt_common']->openOrders(self::api_key(), self::api_secret());
+            // $openOrders = $GLOBALS['Ds_bt_common']->openOrders(self::api_key(), self::api_secret());
 
 
             // print_r($response['data']);
@@ -207,57 +208,60 @@ class Ds_bt_trade1p
                 // print_r($symbol);
 
                 $fullSymbol = $symbol['d'][2];
-                if (!$GLOBALS['Ds_bt_common']->isNotHold(substr($fullSymbol, 0, -4), $assets)) {
-                    echo $fullSymbol . " already on hold</br>\n";
-                } else if ($GLOBALS['Ds_bt_common']->isNotOnOrder($fullSymbol, $openOrders)) {
-                    // $lastPrice = $symbol['d'][3];
-                    // $change24Perc = $symbol['d'][4];
-                    // $volume = $symbol['d'][5];
-                    // $techRate24 = $symbol['d'][6];
-                    // $ask = $symbol['d'][7];
-                    // $exchange = $symbol['d'][8];
-                    // $change5mPerc = $symbol['d'][9];
-                    // $change15mPerc = $symbol['d'][10];
-                    // $changeFromOpen = $symbol['d'][11];
+                if (str_ends_with($fullSymbol, $asset['asset'])) {
+                    if (!$GLOBALS['Ds_bt_common']->isNotHold(substr($fullSymbol, 0, -4), $assets)) {
+                        echo $fullSymbol . " already on hold</br>\n";
+                        // } else if ($GLOBALS['Ds_bt_common']->isNotOnOrder($fullSymbol, $openOrders)) {
+                    } else if ($GLOBALS['Ds_bt_common']->isNotOnOrder($fullSymbol, $GLOBALS['openOrders'])) {
+                        // $lastPrice = $symbol['d'][3];
+                        // $change24Perc = $symbol['d'][4];
+                        // $volume = $symbol['d'][5];
+                        // $techRate24 = $symbol['d'][6];
+                        // $ask = $symbol['d'][7];
+                        // $exchange = $symbol['d'][8];
+                        // $change5mPerc = $symbol['d'][9];
+                        // $change15mPerc = $symbol['d'][10];
+                        // $changeFromOpen = $symbol['d'][11];
 
-                    $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($fullSymbol, $GLOBALS['Ds_bt_common']->depend_on_interval());
-                    echo $fullSymbol . " RECOMMENDATION is " . $symbolRecomendation . "</br>\n";
+                        $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($fullSymbol, $GLOBALS['Ds_bt_common']->depend_on_interval());
+                        echo $fullSymbol . " RECOMMENDATION is " . $symbolRecomendation . "</br>\n";
 
-                    if ($symbolRecomendation == 'STRONG_BUY') { //|| $symbolRecomendation == 'BUY') {
-                        // &&  where currently i didn hold this coin
+                        if ($symbolRecomendation == 'STRONG_BUY') { //|| $symbolRecomendation == 'BUY') {
+                            // &&  where currently i didn hold this coin
 
-                        // echo "reco is $symbolRecomendation Symbol = " . $fullSymbol . " lastPrice=" . $lastPrice . " 24h change=" . $change24Perc . " volume=" . $volume .
-                        //     " Techrate24=" . $techRate24 . " ask=" . $ask . " exchange=" . $exchange . " 5m change=" . $change5mPerc . " 15m chage=" . $change15mPerc . "</br>\n";
-                        //get last order
-
-
-                        if ($asset['free'] > $GLOBALS['Ds_bt_common']->priceToTradeOnSingleCoin() * 2) {
-                            $amountToBuy = $GLOBALS['Ds_bt_common']->priceToTradeOnSingleCoin();
-                        } else {
-                            $amountToBuy = $asset['free'];
-                        }
+                            // echo "reco is $symbolRecomendation Symbol = " . $fullSymbol . " lastPrice=" . $lastPrice . " 24h change=" . $change24Perc . " volume=" . $volume .
+                            //     " Techrate24=" . $techRate24 . " ask=" . $ask . " exchange=" . $exchange . " 5m change=" . $change5mPerc . " 15m chage=" . $change15mPerc . "</br>\n";
+                            //get last order
 
 
-                        $buyOrderBook = $GLOBALS['Ds_bt_common']->buyOrderBook(substr($fullSymbol, 0, -4), $amountToBuy, $GLOBALS['Ds_bt_common']->baseAsset(), 3, self::api_key());
-                        if ($buyOrderBook['quantity'] > 0) {
-                            // echo substr($fullSymbol, 0, -4) . "   is ";
-                            // print_r($buyOrderBook);
-                            // echo " quantity=" . $buyOrderBook['quantity'] . " lastOnOrderBook=" . $buyOrderBook['lastOnOrderBook'] . " amountToBuy=" . $buyOrderBook['amountToBuy'];
-                            // self::save_trade($fullSymbol, "BUY", "SPOT", $quantity, $lastPrice, 'orderId', 'orderListId', 'clientOrderId', 'transactTime');
-                            $type = "LIMIT";
-                            $orderResult = $GLOBALS['Ds_bt_common']->order($fullSymbol, "BUY", $type, $buyOrderBook['quantity'], $buyOrderBook['lastOnOrderBook'], $GLOBALS['Ds_bt_common']->recvWindow(), self::api_key(), self::api_secret());
-                            print_r($orderResult);
+                            if ($asset['free'] > $GLOBALS['Ds_bt_common']->priceToTradeOnSingleCoin() * 2) {
+                                $amountToBuy = $GLOBALS['Ds_bt_common']->priceToTradeOnSingleCoin();
+                            } else {
+                                $amountToBuy = $asset['free'];
+                            }
 
-                            global $table_prefix, $wpdb;
-                            $wp_ds_table = $table_prefix . "ds_bt_symbols";
 
-                            $data = ['lastPrice' => $buyOrderBook['lastOnOrderBook'],];
-                            $where = ['symbol' => substr($fullSymbol, 0, -4)];
-                            $wpdb->update($wp_ds_table, $data, $where);
+                            $buyOrderBook = $GLOBALS['Ds_bt_common']->buyOrderBook(substr($fullSymbol, 0, -4), $amountToBuy, $GLOBALS['Ds_bt_common']->baseAsset(), 3, self::api_key());
+                            if ($buyOrderBook['quantity'] > 0) {
+                                // echo substr($fullSymbol, 0, -4) . "   is ";
+                                // print_r($buyOrderBook);
+                                // echo " quantity=" . $buyOrderBook['quantity'] . " lastOnOrderBook=" . $buyOrderBook['lastOnOrderBook'] . " amountToBuy=" . $buyOrderBook['amountToBuy'];
+                                // self::save_trade($fullSymbol, "BUY", "SPOT", $quantity, $lastPrice, 'orderId', 'orderListId', 'clientOrderId', 'transactTime');
+                                $type = "LIMIT";
+                                $orderResult = $GLOBALS['Ds_bt_common']->order($fullSymbol, "BUY", $type, $buyOrderBook['quantity'], $buyOrderBook['lastOnOrderBook'], $GLOBALS['Ds_bt_common']->recvWindow(), self::api_key(), self::api_secret());
+                                print_r($orderResult);
 
-                            $asset['free'] -= $amountToBuy;
-                            if ($asset['free'] < $GLOBALS['Ds_bt_common']->priceToTradeOnSingleCoin())
-                                break;
+                                global $table_prefix, $wpdb;
+                                $wp_ds_table = $table_prefix . "ds_bt_symbols";
+
+                                $data = ['lastPrice' => $buyOrderBook['lastOnOrderBook'],];
+                                $where = ['symbol' => substr($fullSymbol, 0, -4)];
+                                $wpdb->update($wp_ds_table, $data, $where);
+
+                                $asset['free'] -= $amountToBuy;
+                                if ($asset['free'] < $GLOBALS['Ds_bt_common']->priceToTradeOnSingleCoin())
+                                    break;
+                            }
                         }
                     }
                 }
