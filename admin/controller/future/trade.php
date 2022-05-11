@@ -1,7 +1,5 @@
 <?php
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-error_reporting(E_ALL);
+
 /**
  * The public-facing functionality of the plugin.
  *
@@ -22,47 +20,27 @@ error_reporting(E_ALL);
  * @subpackage Ds_bt/friendship
  * @author     Esubalew Amenu <esubalew.a2009@gmail.com>
  */
-class Ds_bt_trade1p
+class Ds_bt_future_trade
 {
-
-
-    // get strong buys from trading view
-    // buy
-    //check if my coin is on sell
-    // sell
-
-
-
-
-
-
 
     public function __construct()
     {
-        $GLOBALS['Ds_bt_common'] = new Ds_bt_common();
+        $GLOBALS['Ds_bt_future_common'] = new Ds_bt_future_common();
     }
 
     public function main()
     {
 
-        // $trade_coin_volume = 3000000;
-
-        $GLOBALS['openOrders'] = $GLOBALS['Ds_bt_common']->openOrders(self::api_key(), self::api_secret());
-        $GLOBALS['Ds_bt_common']->cancelBuyOrdersIfTooksLong($GLOBALS['openOrders'], self::api_key(), self::api_secret());
+        // $GLOBALS['openOrders'] = $GLOBALS['Ds_bt_common']->openOrders(self::api_key(), self::api_secret());
+        // $GLOBALS['Ds_bt_common']->cancelBuyOrdersIfTooksLong($GLOBALS['openOrders'], self::api_key(), self::api_secret());
 
 
-        // $assetTEST['asset'] = "BSW";
-        // $assetTEST['free'] = "20";
-        // self::checkAndSell($assetTEST);
-
-        // $asset['asset'] = "BUSD";
-        // $asset['free'] = "20";
-        // self::checkAndBuy($asset);
-
-        $myAssets = $GLOBALS['Ds_bt_common']->myAccount(self::api_key(), self::api_secret());
-        if ($myAssets) {
-            self::checkAssets($myAssets);
-        }
+        echo "test user";
+        $myAssets = $GLOBALS['Ds_bt_future_common']->myAccount(self::api_key(), self::api_secret());
+        print_r($myAssets);
+        // if ($myAssets) {
+        //     self::checkAssets($myAssets);
+        // }
     }
     public function checkAssets($myAssets)
     {
