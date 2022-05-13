@@ -171,86 +171,71 @@ class Ds_bt_future_trade
     }
     public function checkAndBuy($asset, $positions)
     {
+        print_r($asset);
 
-        // echo "test";
-
-        $response = $GLOBALS['Ds_bt_future_common']->scanCrypto($asset['asset'], $positions); // base (BUSD OR USDT)
-        // echo " res test is ";
-        // print_r($response);
-        // echo "end";
-        // $response = null;
-        if (isset($response)) {
+        if (isset($positions)) {
 
             // $openOrders = $GLOBALS['Ds_bt_future_common']->openOrders(self::api_key(), self::api_secret());
 
 
             // print_r($response['data']);
-            foreach ($response['data'] as $symbol) {
+            foreach ($positions as $position) {
                 // print_r($symbol);
 
-                $fullSymbol = $symbol['d'][2];
-                if (str_ends_with($fullSymbol, $asset['asset'] . "PERP")) {
+                $fullSymbol = $position['symbol'];
+                if (str_ends_with($fullSymbol, $asset['asset'])) {
                     echo "fullSymbol is " . $fullSymbol . "</br>";
                     // if (!$GLOBALS['Ds_bt_future_common']->isNotHold(substr($fullSymbol, 0, -4), $positions)) {
                     //     echo $fullSymbol . " already on hold</br>\n";
                     //     // } else if ($GLOBALS['Ds_bt_future_common']->isNotOnOrder($fullSymbol, $openOrders)) {
                     // } else if ($GLOBALS['Ds_bt_future_common']->isNotOnOrder($fullSymbol, $GLOBALS['openOrders'])) {
 
-                        // $lastPrice = $symbol['d'][3];
-                        // $change24Perc = $symbol['d'][4];
-                        // $volume = $symbol['d'][5];
-                        $techRate24 = $symbol['d'][6];
-                        // $ask = $symbol['d'][7];
-                        // $exchange = $symbol['d'][8];
-                        // $change5mPerc = $symbol['d'][9];
-                        // $change15mPerc = $symbol['d'][10];
-                        // $changeFromOpen = $symbol['d'][11];
+                    $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($fullSymbol, $GLOBALS['Ds_bt_future_common']->depend_on_interval());
+                    $hourRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($fullSymbol . "PERP", '1h');
+                    echo $fullSymbol . " RECOMMENDATION is " . $symbolRecomendation . " hour recom is " . $hourRecomendation . " - ";
 
-                        $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($fullSymbol, $GLOBALS['Ds_bt_future_common']->depend_on_interval());
-                        echo $fullSymbol . " RECOMMENDATION is " . $symbolRecomendation . " day recommendation is " . $techRate24 . "</br>\n";
-
-                        // if ($symbolRecomendation == 'STRONG_BUY') { //|| $symbolRecomendation == 'BUY') {
-                        //     // &&  where currently i didn hold this coin
-
-                        //     // echo "reco is $symbolRecomendation Symbol = " . $fullSymbol . " lastPrice=" . $lastPrice . " 24h change=" . $change24Perc . " volume=" . $volume .
-                        //     //     " Techrate24=" . $techRate24 . " ask=" . $ask . " exchange=" . $exchange . " 5m change=" . $change5mPerc . " 15m chage=" . $change15mPerc . "</br>\n";
+                    if (($symbolRecomendation == 'STRONG_BUY' || $symbolRecomendation == 'BUY') && ($hourRecomendation == 'STRONG_BUY' || $hourRecomendation == 'BUY')) {
+                        echo "buy this </br>\n";
                         //     //get last order
 
+                        if ($asset['walletBalance'] > $GLOBALS['Ds_bt_future_common']->priceToTradeOnSingleCoin() * 2) {
+                            $amountToBuy = $GLOBALS['Ds_bt_future_common']->priceToTradeOnSingleCoin();
+                        } else {
+                            $amountToBuy = $asset['walletBalance'];
+                        }
 
-                        //     if ($asset['free'] > $GLOBALS['Ds_bt_future_common']->priceToTradeOnSingleCoin() * 2) {
-                        //         $amountToBuy = $GLOBALS['Ds_bt_future_common']->priceToTradeOnSingleCoin();
-                        //     } else {
-                        //         $amountToBuy = $asset['free'];
-                        //     }
+                        // echo "buyorderboook test " . $fullSymbol;
+                        $buyOrderBook = $GLOBALS['Ds_bt_future_common']->buyOrderBook(substr($fullSymbol, 0, -4), $amountToBuy, $GLOBALS['Ds_bt_future_common']->baseAsset(), 5, self::api_key());
+                        // print_r($buyOrderBook);
+                        // echo "\n";
+                        if ($buyOrderBook['quantity'] > 0) {
+                            //         // echo substr($fullSymbol, 0, -4) . "   is ";
+                            //         // print_r($buyOrderBook);
+                            echo " quantity=" . $buyOrderBook['quantity'] . " lastOnOrderBook=" . $buyOrderBook['lastOnOrderBook'] . " amountToBuy=" . $buyOrderBook['amountToBuy'];
 
+                            $type = "LIMIT";
+                            $stopPrice = $buyOrderBook['lastOnOrderBook'] + 100;
+                            $orderResult = $GLOBALS['Ds_bt_future_common']->order($fullSymbol, "BUY", $type, $buyOrderBook['quantity'], $buyOrderBook['lastOnOrderBook'], $stopPrice, $GLOBALS['Ds_bt_future_common']->recvWindow(), self::api_key(), self::api_secret());
+                            print_r($orderResult);
 
-                        //     $buyOrderBook = $GLOBALS['Ds_bt_future_common']->buyOrderBook(substr($fullSymbol, 0, -4), $amountToBuy, $GLOBALS['Ds_bt_future_common']->baseAsset(), 3, self::api_key());
-                        //     if ($buyOrderBook['quantity'] > 0) {
-                        //         // echo substr($fullSymbol, 0, -4) . "   is ";
-                        //         // print_r($buyOrderBook);
-                        //         // echo " quantity=" . $buyOrderBook['quantity'] . " lastOnOrderBook=" . $buyOrderBook['lastOnOrderBook'] . " amountToBuy=" . $buyOrderBook['amountToBuy'];
-                        //         // self::save_trade($fullSymbol, "BUY", "SPOT", $quantity, $lastPrice, 'orderId', 'orderListId', 'clientOrderId', 'transactTime');
-                        //         $type = "LIMIT";
-                        //         $orderResult = $GLOBALS['Ds_bt_future_common']->order($fullSymbol, "BUY", $type, $buyOrderBook['quantity'], $buyOrderBook['lastOnOrderBook'], $GLOBALS['Ds_bt_future_common']->recvWindow(), self::api_key(), self::api_secret());
-                        //         print_r($orderResult);
+                            global $table_prefix, $wpdb;
+                            $wp_ds_table = $table_prefix . "ds_bt_symbols";
 
-                        //         global $table_prefix, $wpdb;
-                        //         $wp_ds_table = $table_prefix . "ds_bt_symbols";
+                            $data = ['lastPrice' => $buyOrderBook['lastOnOrderBook'],];
+                            $where = ['symbol' => substr($fullSymbol, 0, -4)];
+                            $wpdb->update($wp_ds_table, $data, $where);
 
-                        //         $data = ['lastPrice' => $buyOrderBook['lastOnOrderBook'],];
-                        //         $where = ['symbol' => substr($fullSymbol, 0, -4)];
-                        //         $wpdb->update($wp_ds_table, $data, $where);
-
-                        //         $asset['free'] -= $amountToBuy;
-                        //         if ($asset['free'] < $GLOBALS['Ds_bt_future_common']->priceToTradeOnSingleCoin())
-                        //             break;
-                        //     }
-                        // }
-                //     }
+                            $asset['walletBalance'] -= $amountToBuy;
+                            if ($asset['walletBalance'] < $GLOBALS['Ds_bt_future_common']->priceToTradeOnSingleCoin())
+                                break;
+                            // }
+                        }
+                    } else if (($symbolRecomendation == 'STRONG_SELL' || $symbolRecomendation == 'SELL') && ($hourRecomendation == 'STRONG_SELL' || $hourRecomendation == 'SELL')) {
+                        echo "SELL this </br>\n";
+                    } else echo " </br>\n";
                 }
             }
-        } else
-            echo "there is no good recommendation (not to buy at this time)</br>\n";
+        }
     }
     public function api_secret()
     {

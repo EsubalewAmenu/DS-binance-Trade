@@ -34,7 +34,68 @@ class Ds_bt_future_common
         // //1m3m5m15m30m1h2h4h6h8h12h1d3d1w1M
     }
 
+    public function baseAsset()
+    {
+        return "BUSD";
+        // return "USDT";
+    }
 
+    public function recvWindow()
+    {
+        return 60000;
+    }
+    public function buyOrderBook($symbol, $amountToBuy, $baseAsset, $limit, $key)
+    {
+
+        $Ds_bt_common = new Ds_bt_common();
+
+        $dbSymbol = $Ds_bt_common->getSymbolFromDB($symbol);
+
+        if ($dbSymbol) {
+            $orderBook = self::sendRequest("GET", "fapi/v1/depth?symbol=" . $symbol . $baseAsset . "&limit=$limit", $key); // get orderbook (BUY)
+            if ($orderBook['code'] == 200 || $orderBook['code'] == 201) {
+                $lastOnOrderBook = json_decode($orderBook['result'], true);
+                // print_r($lastOnOrderBook);
+                $lastOnOrderBook = $lastOnOrderBook['bids'][$limit - 1][0];
+
+                // $min_lot_size = $dbSymbol->min_lot_size;
+
+                // $amountToBuy -= fmod($amountToBuy, $lastOnOrderBook); //$amountToBuy % $lastOnOrderBook;
+                $quantity = $amountToBuy / $lastOnOrderBook;
+                $quantity = $Ds_bt_common->precisionQuantity($dbSymbol->min_lot_size, $quantity);
+
+                // echo " afterPoint $afterPoint after float " . $quantity;
+                return array("quantity" => $quantity, "lastOnOrderBook" => $lastOnOrderBook, "amountToBuy" => $amountToBuy);
+            }
+        }
+        return null;
+    }
+    public function order($symbol, $side, $type, $quantity, $price, $stopPrice, $recvWindow, $key, $secret)
+    {
+        // place order, make sure API key and secret are set, recommend to test on testnet.
+        $args = [
+            'symbol' => $symbol,
+            'side' => $side,
+            'type' => $type,
+            'timeInForce' => 'GTC',
+            'quantity' => $quantity,
+            'price' => $price,
+            'recvWindow' => $recvWindow,
+            // 'stopPrice' => '', // $price + 0.1 percent
+            'newOrderRespType' => 'FULL' //optional
+        ];
+        if ($stopPrice > 0)
+            $args[] = array('stopPrice' => $stopPrice);
+
+            print_r($args);
+
+        // $response = self::signedRequest('POST', 'fapi/v1/order', $args, $key, $secret);
+        // if ($response['code'] == 200 || $response['code'] == 201) {
+        //     $order = json_decode($response['result'], true);
+        //     return "order id " . $order['orderId'] . " symbol $symbol side $side origQty " . $order['origQty'] . " price " . $order['price'] . " </br>\n";
+        // }
+        // return $response;
+    }
     public function isNotHold($asset, $positions)
     {
 
