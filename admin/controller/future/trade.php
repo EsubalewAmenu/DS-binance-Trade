@@ -36,11 +36,14 @@ class Ds_bt_future_trade
         // $GLOBALS['Ds_bt_future_common']->cancelBuyOrdersIfTooksLong($GLOBALS['openOrders'], self::api_key(), self::api_secret());
 
 
-        echo "test user";
-        $myAssets = $GLOBALS['Ds_bt_future_common']->myAccount(self::api_key(), self::api_secret());
-        // print_r($myAssets);
-        if ($myAssets) {
-            self::checkAssets($myAssets);
+        if ($GLOBALS['Ds_bt_future_common']->isSymbolsUpdated(self::api_key())) {
+
+            echo "test user";
+            $myAssets = $GLOBALS['Ds_bt_future_common']->myAccount(self::api_key(), self::api_secret());
+            // print_r($myAssets);
+            if ($myAssets) {
+                self::checkAssets($myAssets);
+            }
         }
     }
     public function checkAssets($myAssets)
@@ -53,8 +56,8 @@ class Ds_bt_future_trade
             //     self::checkAndSell($asset);
             // } else 
             if ($asset['asset'] == "BUSD" || $asset['asset'] == "USDT") {
-                if ($asset['walletBalance'] > 11) {
-                    echo $asset['asset'] . " buy started. free is " . $asset['walletBalance'] . "\n";
+                if ($asset['availableBalance'] > 11) {
+                    echo $asset['asset'] . " buy started. free is " . $asset['availableBalance'] . "\n";
                     self::checkAndBuy($asset, $myAssets['positions']);
                 }
             }
@@ -198,24 +201,24 @@ class Ds_bt_future_trade
                         echo "buy this </br>\n";
                         //     //get last order
 
-                        if ($asset['walletBalance'] > $GLOBALS['Ds_bt_future_common']->priceToTradeOnSingleCoin() * 2) {
+                        if ($asset['availableBalance'] > $GLOBALS['Ds_bt_future_common']->priceToTradeOnSingleCoin() * 2) {
                             $amountToBuy = $GLOBALS['Ds_bt_future_common']->priceToTradeOnSingleCoin();
                         } else {
-                            $amountToBuy = $asset['walletBalance'];
+                            $amountToBuy = $asset['availableBalance'];
                         }
 
                         // echo "buyorderboook test " . $fullSymbol;
-                        $buyOrderBook = $GLOBALS['Ds_bt_future_common']->buyOrderBook(substr($fullSymbol, 0, -4), $amountToBuy, $GLOBALS['Ds_bt_future_common']->baseAsset(), 5, self::api_key());
+                        $buyOrderBook = $GLOBALS['Ds_bt_future_common']->buyOrderBook(substr($fullSymbol, 0, -4), $amountToBuy, 0.005, $GLOBALS['Ds_bt_future_common']->baseAsset(), 5, self::api_key());
                         // print_r($buyOrderBook);
                         // echo "\n";
-                        if ($buyOrderBook['quantity'] > 0) {
+                        if ($buyOrderBook['quantity'] > 0 && ($buyOrderBook['quantity'] * $buyOrderBook['lastOnOrderBook']) <= $amountToBuy) {
                             //         // echo substr($fullSymbol, 0, -4) . "   is ";
                             //         // print_r($buyOrderBook);
                             echo " quantity=" . $buyOrderBook['quantity'] . " lastOnOrderBook=" . $buyOrderBook['lastOnOrderBook'] . " amountToBuy=" . $buyOrderBook['amountToBuy'];
 
                             $type = "LIMIT";
-                            $stopPrice = $buyOrderBook['lastOnOrderBook'] + 100;
-                            $orderResult = $GLOBALS['Ds_bt_future_common']->order($fullSymbol, "BUY", $type, $buyOrderBook['quantity'], $buyOrderBook['lastOnOrderBook'], $stopPrice, $GLOBALS['Ds_bt_future_common']->recvWindow(), self::api_key(), self::api_secret());
+                            // $stopPrice = $buyOrderBook['lastOnOrderBook'] + ($buyOrderBook['lastOnOrderBook'] * 0.005);
+                            $orderResult = $GLOBALS['Ds_bt_future_common']->order($fullSymbol, "BUY", $type, $buyOrderBook['quantity'], $buyOrderBook['lastOnOrderBook'], $buyOrderBook['stopPrice'], $GLOBALS['Ds_bt_future_common']->recvWindow(), self::api_key(), self::api_secret());
                             print_r($orderResult);
 
                             global $table_prefix, $wpdb;
@@ -225,10 +228,11 @@ class Ds_bt_future_trade
                             $where = ['symbol' => substr($fullSymbol, 0, -4)];
                             $wpdb->update($wp_ds_table, $data, $where);
 
-                            $asset['walletBalance'] -= $amountToBuy;
-                            if ($asset['walletBalance'] < $GLOBALS['Ds_bt_future_common']->priceToTradeOnSingleCoin())
+                            $asset['availableBalance'] -= $amountToBuy;
+                            if ($asset['availableBalance'] < $GLOBALS['Ds_bt_future_common']->priceToTradeOnSingleCoin())
                                 break;
                             // }
+
                         }
                     } else if (($symbolRecomendation == 'STRONG_SELL' || $symbolRecomendation == 'SELL') && ($hourRecomendation == 'STRONG_SELL' || $hourRecomendation == 'SELL')) {
                         echo "SELL this </br>\n";
