@@ -36,15 +36,27 @@ class Ds_bt_future_common
 
     public function baseAsset()
     {
-        return "BUSD";
-        // return "USDT";
+        // return "BUSD";
+        return "USDT";
     }
 
     public function recvWindow()
     {
         return 60000;
     }
-    public function buyOrderBook($symbol, $amountToBuy, $TAKE_PROFIT, $baseAsset, $limit, $key)
+    public function getDepth($symbol, $limit, $key)
+    {
+        $response = self::sendRequest("GET", "fapi/v1/depth?symbol=" . $symbol . "&limit=$limit", $key); // get orderbook (BUY)
+        print_r($response);
+        if ($response['code'] == 200 || $response['code'] == 201) {
+            $orderBook = json_decode($response['result'], true);
+            return array("buy_with" => $orderBook['bids'][0][0], "sell_by" => $orderBook['asks'][0][0]);
+            // return array("buy_with" => $orderBook['bids'][$limit - 1][0], "sell_by" => $orderBook['asks'][$limit - 1][0]);
+        }
+        return null;
+    }
+
+    public function buyOrderBook($symbol, $amountToBuy, $baseAsset, $limit, $key)
     {
 
         $Ds_bt_common = new Ds_bt_common();
@@ -56,7 +68,7 @@ class Ds_bt_future_common
             if ($orderBook['code'] == 200 || $orderBook['code'] == 201) {
                 $lastOnOrderBook = json_decode($orderBook['result'], true);
                 // print_r($lastOnOrderBook);
-                $lastOnOrderBook = $lastOnOrderBook['bids'][$limit - 1][0];
+                $lastOnOrderBook = $lastOnOrderBook['bids'][0][0];
 
                 // $min_lot_size = $dbSymbol->min_lot_size;
 
@@ -64,46 +76,77 @@ class Ds_bt_future_common
                 $quantity = $amountToBuy / $lastOnOrderBook;
                 $quantity = $Ds_bt_common->precisionQuantity($dbSymbol->min_lot_size, $quantity);
 
-                $stopPrice = $lastOnOrderBook + ($lastOnOrderBook * $TAKE_PROFIT);
-                $stopPrice = $Ds_bt_common->precisionPrice($dbSymbol->precisionPrice, $stopPrice);
-
                 // echo " afterPoint $afterPoint after float " . $quantity;
-                return array("quantity" => $quantity, "lastOnOrderBook" => $lastOnOrderBook, "amountToBuy" => $amountToBuy, "stopPrice" => $stopPrice);
+                return array("quantity" => $quantity, "lastOnOrderBook" => $lastOnOrderBook, "amountToBuy" => $amountToBuy);
             }
         }
         return null;
     }
-    public function order($symbol, $side, $type, $quantity, $price, $stopPrice, $recvWindow, $key, $secret)
+    public function openOrders($api_key, $api_secret)
+    {
+        $response = self::signedRequest('GET', 'fapi/v1/openOrders', [
+            'recvWindow' => self::recvWindow(),
+        ], $api_key, $api_secret);
+        // print_r($response);
+        if ($response['code'] == 200 || $response['code'] == 201) {
+            return json_decode($response['result'], true);
+        }
+        return null;
+    }
+    public function changeLeverage($symbol, $leverage, $key, $secret)
     {
         // place order, make sure API key and secret are set, recommend to test on testnet.
 
-        if ($stopPrice > 0) {
-            $args = [
-                'symbol' => $symbol,
-                'side' => $side,
-                'type' => $type,
-                'timeInForce' => 'GTC',
-                'quantity' => $quantity,
-                'price' => $price,
-                'recvWindow' => $recvWindow,
-                // 'TAKE_PROFIT' => $stopPrice,
-                // 'stopPrice' => $stopPrice,
-                // 'closePosition' => "true",
-                'newOrderRespType' => 'FULL' //optional
-            ];
-        } else {
-            $args = [
-                'symbol' => $symbol,
-                'side' => $side,
-                'type' => $type,
-                'timeInForce' => 'GTC',
-                'quantity' => $quantity,
-                'price' => $price,
-                'recvWindow' => $recvWindow,
-                'newOrderRespType' => 'FULL' //optional
-            ];
+        $args = [
+            'symbol' => $symbol,
+            'leverage' => $leverage,
+        ];
+
+        // echo "changeLeverage is";
+        $response = self::signedRequest('POST', 'fapi/v1/leverage', $args, $key, $secret);
+        // print_r($response['result']);
+        if ($response['code'] == 200 || $response['code'] == 201) {
+            return true;
         }
-        print_r($args);
+        return false;
+    }
+    public function closePosition($symbol, $side, $quantity, $stopPrice, $recvWindow, $key, $secret)
+    {
+        // place order, make sure API key and secret are set, recommend to test on testnet.
+        echo "stopPrice = " . $stopPrice;
+        $args = [
+            'symbol' => $symbol,
+            'side' => $side,
+            'type' => 'TAKE_PROFIT_MARKET',
+            // 'quantity' => $quantity,
+            'timeInForce' => 'GTC',
+            'stopPrice' => $stopPrice,
+            'recvWindow' => $recvWindow,
+            'closePosition' => 'true'
+        ];
+
+        $response = self::signedRequest('POST', 'fapi/v1/order', $args, $key, $secret);
+        print_r($response);
+        if ($response['code'] == 200 || $response['code'] == 201) {
+            $order = json_decode($response['result'], true);
+            return "order id " . $order['orderId'] . " symbol $symbol side $side origQty " . $order['origQty'] . " price " . $order['price'] . " </br>\n";
+        }
+        return $response;
+    }
+    public function order($symbol, $side, $type, $quantity, $price, $recvWindow, $key, $secret)
+    {
+        // place order, make sure API key and secret are set, recommend to test on testnet.
+
+        $args = [
+            'symbol' => $symbol,
+            'side' => $side,
+            'type' => $type,
+            'timeInForce' => 'GTC',
+            'quantity' => $quantity,
+            'price' => $price,
+            'recvWindow' => $recvWindow,
+            'newOrderRespType' => 'FULL' //optional
+        ];
 
         $response = self::signedRequest('POST', 'fapi/v1/order', $args, $key, $secret);
         if ($response['code'] == 200 || $response['code'] == 201) {
@@ -112,20 +155,11 @@ class Ds_bt_future_common
         }
         return $response;
     }
-    public function isNotHold($asset, $positions)
+    public function isNotHold($positions)
     {
-
         foreach ($positions as $position) {
-            if (str_ends_with($position['symbol'], $asset)) {
-
-                $Ds_bt_common = new Ds_bt_common();
-
-                $dbSymbol = $Ds_bt_common->getSymbolFromDB($asset);
-
-                $amount_holded = $position['free'] + $position['locked'];
-
-                if (($amount_holded * $dbSymbol->lastPrice) < 10)
-                    return true;
+            if ($position['maintMargin'] > 0) {
+                return $position;
             }
         }
         return false;
