@@ -137,13 +137,14 @@ class Ds_bt_future_common
     {
         // place order, make sure API key and secret are set, recommend to test on testnet.
 
+        echo "symbol " . $symbol . " quantity " . $quantity;
         $args = [
             'symbol' => $symbol,
             'side' => $side,
             'type' => $type,
-            'timeInForce' => 'GTC',
+            // 'timeInForce' => 'GTC',
             'quantity' => $quantity,
-            'price' => $price,
+            // 'price' => $price,
             'recvWindow' => $recvWindow,
             'newOrderRespType' => 'FULL' //optional
         ];
@@ -172,7 +173,7 @@ class Ds_bt_future_common
         $wp_ds_bt_symbols_table = $table_prefix . "ds_bt_symbols";
         $setting = $wpdb->get_row("SELECT * FROM " . $wp_ds_bt_settings_table . ' WHERE _key="symbols_last_updated"');
         if ($setting) {
-            if ($setting->value1 == date("d-m-y")) {
+            if ($setting->value1 != date("d-m-y")) {
                 // once a day (by checking symbols_last_updated from setting)
                 // {
                 $exchangeInfos = self::sendRequest("GET", "fapi/v1/exchangeInfo", $key);
