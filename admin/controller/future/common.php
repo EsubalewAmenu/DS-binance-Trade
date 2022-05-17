@@ -47,10 +47,10 @@ class Ds_bt_future_common
     public function getDepth($symbol, $limit, $key)
     {
         $response = self::sendRequest("GET", "fapi/v1/depth?symbol=" . $symbol . "&limit=$limit", $key); // get orderbook (BUY)
-        print_r($response);
+        // print_r($response);
         if ($response['code'] == 200 || $response['code'] == 201) {
             $orderBook = json_decode($response['result'], true);
-            return array("buy_with" => $orderBook['bids'][0][0], "sell_by" => $orderBook['asks'][0][0]);
+            return array("buy_with" => $orderBook['bids'][1][0], "sell_by" => $orderBook['asks'][1][0]);
             // return array("buy_with" => $orderBook['bids'][$limit - 1][0], "sell_by" => $orderBook['asks'][$limit - 1][0]);
         }
         return null;

@@ -53,56 +53,63 @@ class Ds_bt_future_trade
         echo "checking assets " . time() . "</br>\n";
 
         $onHold = $GLOBALS['Ds_bt_future_common']->isNotHold($myAssets['positions']);
-        if (!$onHold) {
-            foreach ($myAssets['assets'] as $asset) {
+        // if (!$onHold) {
+        foreach ($myAssets['assets'] as $asset) {
 
-                // if ($asset['free'] > 0 && $asset['asset'] != "BUSD" && $asset['asset'] != "USDT") {
-                //     self::checkAndSell($asset);
-                // } else 
-                if ($asset['asset'] == "BUSD" || $asset['asset'] == "USDT") {
-                    if ($asset['availableBalance'] > 11) {
-                        echo $asset['asset'] . " buy started. free is " . $asset['availableBalance'] . "\n";
-                        self::checkAndBuy($asset, $myAssets['positions']);
-                    }
+            // if ($asset['free'] > 0 && $asset['asset'] != "BUSD" && $asset['asset'] != "USDT") {
+            //     self::checkAndSell($asset);
+            // } else 
+            if ($asset['asset'] == "BUSD" || $asset['asset'] == "USDT") {
+                if ($asset['availableBalance'] > 11) {
+                    echo $asset['asset'] . " buy started. free is " . $asset['availableBalance'] . "\n";
+                    self::checkAndBuy($asset, $myAssets['positions']);
                 }
             }
-        } else {
-            // echo "there is on hold";
-            // print_r($onHold);
-            // ROE% = PnL / Initial Margin = side * (1 - entry price / exit price) / IMR
-            $ROE = ($onHold['unrealizedProfit'] / $onHold['initialMargin']) * 100;
-            $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($onHold['symbol'], $GLOBALS['Ds_bt_future_common']->depend_on_interval());
-            if ($onHold['positionAmt'] < 0)  $short_long = "SHORT";
-            else $short_long = "LONG";
-            echo $onHold['symbol'] . " is on hold - leverage = " . $onHold['leverage'] . " (" . $short_long . ") ROE% = " . $ROE . " Profit=" . $onHold['unrealizedProfit'] . " recommendation is " . $symbolRecomendation;
+        }
+        // } else 
+        if ($onHold) {
 
-            if ($ROE > 1) {
-                if (($onHold['positionAmt'] < 0 && ($symbolRecomendation == "SELL" || $symbolRecomendation == "NUTRAL" || $symbolRecomendation == "BUY" || $symbolRecomendation == "STRONG_BUY")
-                    ) ||
-                    ($onHold['positionAmt'] > 0 && ($symbolRecomendation == "SELL" || $symbolRecomendation == "NUTRAL" || $symbolRecomendation == "BUY" || $symbolRecomendation == "STRONG_SELL")
-                    )
-                ) {
-                    // echo "buyorderboook test " . $fullSymbol;
-                    // print_r($buyOrderBook);
-                    // echo "\n";
-                    // $buyOrderBook['quantity'] > 0 && ($buyOrderBook['quantity'] * $buyOrderBook['lastOnOrderBook']) <= $amountToBuy
+            foreach ($myAssets['positions'] as $position) {
+                if ($position['maintMargin'] > 0) {
+                    // echo "there is on hold";
+                    // print_r($onHold);
+                    // ROE% = PnL / Initial Margin = side * (1 - entry price / exit price) / IMR
+                    $ROE = ($position['unrealizedProfit'] / $position['initialMargin']) * 100;
+                    $symbolRecomendation = $GLOBALS['Ds_bt_common']->symbol_status($position['symbol'], $GLOBALS['Ds_bt_future_common']->depend_on_interval());
+                    if ($position['positionAmt'] < 0)  $short_long = "SHORT";
+                    else $short_long = "LONG";
+                    echo "\n" . $position['symbol'] . " is on hold - leverage = " . $position['leverage'] . " (" . $short_long . ") ROE% = " . $ROE . " Profit=" . $position['unrealizedProfit'] . " recommendation is " . $symbolRecomendation;
 
-                    if ($onHold['positionAmt'] < 0) {
-                        $onHold['positionAmt'] *= -1;
-                        $side = "BUY";
-                        $price = $GLOBALS['Ds_bt_future_common']->buyOrderBook(substr($onHold['symbol'], 0, -4), $onHold['initialMargin'], $GLOBALS['Ds_bt_future_common']->baseAsset(), 5, self::api_key())['lastOnOrderBook'];
-                    } else {
-                        $side = "SELL";
+                    if ($ROE > 1) {
+                        // if (($position['positionAmt'] < 0 && ($symbolRecomendation == "SELL" || $symbolRecomendation == "NUTRAL" || $symbolRecomendation == "BUY" || $symbolRecomendation == "STRONG_BUY")
+                        //     ) ||
+                        //     ($position['positionAmt'] > 0 && ($symbolRecomendation == "SELL" || $symbolRecomendation == "NUTRAL" || $symbolRecomendation == "BUY" || $symbolRecomendation == "STRONG_SELL")
+                        //     )
+                        // ) 
+                        {
+                            // echo "buyorderboook test " . $fullSymbol;
+                            // print_r($buyOrderBook);
+                            // echo "\n";
+                            // $buyOrderBook['quantity'] > 0 && ($buyOrderBook['quantity'] * $buyOrderBook['lastOnOrderBook']) <= $amountToBuy
 
-                        $orderBook = $GLOBALS['Ds_bt_future_common']->getDepth($onHold['symbol'], 5, self::api_key()); // get orderbook (BUY)
+                            if ($position['positionAmt'] < 0) {
+                                $position['positionAmt'] *= -1;
+                                $side = "BUY";
+                                $price = $GLOBALS['Ds_bt_future_common']->buyOrderBook(substr($position['symbol'], 0, -4), $position['initialMargin'], $GLOBALS['Ds_bt_future_common']->baseAsset(), 5, self::api_key())['lastOnOrderBook'];
+                            } else {
+                                $side = "SELL";
 
-                        $price = $orderBook['sell_by'];
+                                $orderBook = $GLOBALS['Ds_bt_future_common']->getDepth($position['symbol'], 5, self::api_key()); // get orderbook (BUY)
+
+                                $price = $orderBook['sell_by'];
+                            }
+                            $closePosition = $GLOBALS['Ds_bt_future_common']->closePosition($position['symbol'], $side, $position['positionAmt'], $price, $GLOBALS['Ds_bt_future_common']->recvWindow(), self::api_key(), self::api_secret());
+                            print_r($closePosition);
+                        }
+                    } else if ($ROE < -10) {
+                        echo "too much kisara!";
                     }
-                    $closePosition = $GLOBALS['Ds_bt_future_common']->closePosition($onHold['symbol'], $side, $onHold['positionAmt'], $price, $GLOBALS['Ds_bt_future_common']->recvWindow(), self::api_key(), self::api_secret());
-                    print_r($closePosition);
                 }
-            } else if ($ROE < -10) {
-                echo "too much kisara!";
             }
         }
     }
@@ -239,31 +246,31 @@ class Ds_bt_future_trade
                                 echo " quantity=" . $buyOrderBook['quantity'] . " lastOnOrderBook=" . $buyOrderBook['lastOnOrderBook'] . " amountToBuy=" . $buyOrderBook['amountToBuy'];
 
 
-                                if ($hourRecomendation == "STRONG_BUY")
-                                    $leverage = "20";
-                                else
-                                    $leverage = "5";
-                                $changeLeverage = $GLOBALS['Ds_bt_future_common']->changeLeverage($fullSymbol, $leverage, self::api_key(), self::api_secret());
+                                // if ($hourRecomendation == "STRONG_BUY")
+                                $leverage = 10;
+                                // else
+                                //     $leverage = "5";
+                                // $changeLeverage = $GLOBALS['Ds_bt_future_common']->changeLeverage($fullSymbol, $leverage, self::api_key(), self::api_secret());
 
                                 // echo "print ";
                                 // print_r($changeLeverage);
 
-                                if ($changeLeverage) {
-                                    $type = "MARKET";
-                                    $orderResult = $GLOBALS['Ds_bt_future_common']->order($fullSymbol, "BUY", $type, $buyOrderBook['quantity'], $buyOrderBook['lastOnOrderBook'], $GLOBALS['Ds_bt_future_common']->recvWindow(), self::api_key(), self::api_secret());
-                                    print_r($orderResult);
+                                // if ($changeLeverage) {
+                                $type = "MARKET";
+                                $orderResult = $GLOBALS['Ds_bt_future_common']->order($fullSymbol, "BUY", $type, ($buyOrderBook['quantity'] * $leverage), $buyOrderBook['lastOnOrderBook'], $GLOBALS['Ds_bt_future_common']->recvWindow(), self::api_key(), self::api_secret());
+                                print_r($orderResult);
 
-                                    global $table_prefix, $wpdb;
-                                    $wp_ds_table = $table_prefix . "ds_bt_symbols";
+                                global $table_prefix, $wpdb;
+                                $wp_ds_table = $table_prefix . "ds_bt_symbols";
 
-                                    $data = ['lastPrice' => $buyOrderBook['lastOnOrderBook'],];
-                                    $where = ['symbol' => substr($fullSymbol, 0, -4)];
-                                    $wpdb->update($wp_ds_table, $data, $where);
+                                $data = ['lastPrice' => $buyOrderBook['lastOnOrderBook'],];
+                                $where = ['symbol' => substr($fullSymbol, 0, -4)];
+                                $wpdb->update($wp_ds_table, $data, $where);
 
-                                    $asset['availableBalance'] -= $amountToBuy;
-                                    if ($asset['availableBalance'] < $GLOBALS['Ds_bt_future_common']->priceToTradeOnSingleCoin())
-                                        break;
-                                }
+                                $asset['availableBalance'] -= $amountToBuy;
+                                if ($asset['availableBalance'] < $GLOBALS['Ds_bt_future_common']->priceToTradeOnSingleCoin())
+                                    break;
+                                // }
                             }
                         } else if ($symbolRecomendation == 'STRONG_SELL' && ($hourRecomendation == 'STRONG_SELL')) { // || $hourRecomendation == 'SELL')) {
 
@@ -272,37 +279,34 @@ class Ds_bt_future_trade
 
                             $orderBook = $GLOBALS['Ds_bt_future_common']->getDepth($fullSymbol, 5, self::api_key()); // get orderbook (BUY)
 
-                            if ($hourRecomendation == "STRONG_SELL")
-                                $leverage = "20";
-                            else
-                                $leverage = "5";
+                            // if ($hourRecomendation == "STRONG_SELL")
+                            $leverage = 10;
+                            // else
+                            //     $leverage = "5";
 
-                            $changeLeverage = $GLOBALS['Ds_bt_future_common']->changeLeverage($fullSymbol, $leverage, self::api_key(), self::api_secret());
+                            // $changeLeverage = $GLOBALS['Ds_bt_future_common']->changeLeverage($fullSymbol, $leverage, self::api_key(), self::api_secret());
 
-                            // echo "print ";
-                            // print_r($changeLeverage);
+                            // if ($changeLeverage) {
 
-                            if ($changeLeverage) {
+                            $dbSymbol = $GLOBALS['Ds_bt_common']->getSymbolFromDB(substr($fullSymbol, 0, -4));
+                            $sellingPrice = $GLOBALS['Ds_bt_common']->precisionPrice($dbSymbol->precisionPrice, $orderBook['sell_by']);
+                            $freeQuantity = $GLOBALS['Ds_bt_common']->precisionQuantity($dbSymbol->min_lot_size, ($asset['availableBalance'] / $orderBook['sell_by']));
 
-                                $dbSymbol = $GLOBALS['Ds_bt_common']->getSymbolFromDB(substr($fullSymbol, 0, -4));
-                                $sellingPrice = $GLOBALS['Ds_bt_common']->precisionPrice($dbSymbol->precisionPrice, $orderBook['sell_by']);
-                                $freeQuantity = $GLOBALS['Ds_bt_common']->precisionQuantity($dbSymbol->min_lot_size, ($asset['availableBalance'] / $orderBook['sell_by']));
+                            $type = "MARKET";
+                            $orderResult = $GLOBALS['Ds_bt_future_common']->order($fullSymbol, "SELL", $type, ($freeQuantity * $leverage), $sellingPrice, $GLOBALS['Ds_bt_common']->recvWindow(), self::api_key(), self::api_secret());
+                            print_r($orderResult);
 
-                                $type = "MARKET";
-                                $orderResult = $GLOBALS['Ds_bt_future_common']->order($fullSymbol, "SELL", $type, $freeQuantity, $sellingPrice, $GLOBALS['Ds_bt_common']->recvWindow(), self::api_key(), self::api_secret());
-                                print_r($orderResult);
+                            global $table_prefix, $wpdb;
+                            $wp_ds_table = $table_prefix . "ds_bt_symbols";
 
-                                global $table_prefix, $wpdb;
-                                $wp_ds_table = $table_prefix . "ds_bt_symbols";
+                            $data = ['lastPrice' => $orderBook['sell_by'],];
+                            $where = ['symbol' => substr($fullSymbol, 0, -4)];
+                            $wpdb->update($wp_ds_table, $data, $where);
 
-                                $data = ['lastPrice' => $orderBook['sell_by'],];
-                                $where = ['symbol' => substr($fullSymbol, 0, -4)];
-                                $wpdb->update($wp_ds_table, $data, $where);
-
-                                // $asset['availableBalance'] -= $amountToBuy;
-                                // if ($asset['availableBalance'] < $GLOBALS['Ds_bt_future_common']->priceToTradeOnSingleCoin())
-                                break;
-                            }
+                            // $asset['availableBalance'] -= $amountToBuy;
+                            // if ($asset['availableBalance'] < $GLOBALS['Ds_bt_future_common']->priceToTradeOnSingleCoin())
+                            break;
+                            // }
                         } else echo " </br>\n";
                     }
                 }
