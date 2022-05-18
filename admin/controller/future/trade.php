@@ -60,7 +60,7 @@ class Ds_bt_future_trade
             //     self::checkAndSell($asset);
             // } else 
             if ($asset['asset'] == "BUSD" || $asset['asset'] == "USDT") {
-                if ($asset['availableBalance'] > 11) {
+                if ($asset['availableBalance'] > 7) {
                     echo $asset['asset'] . " buy started. free is " . $asset['availableBalance'] . "\n";
                     self::checkAndBuy($asset, $myAssets['positions']);
                 }

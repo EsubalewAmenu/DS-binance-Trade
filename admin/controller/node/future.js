@@ -6,7 +6,7 @@ const get = async () => {
         console.log(res.data);
     })
 }
-setInterval(get, 60000)
+setInterval(get, 30000)
 
 // to fix "Error: self signed certificate", run "export NODE_TLS_REJECT_UNAUTHORIZED='0'"
 

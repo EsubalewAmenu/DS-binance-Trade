@@ -68,7 +68,7 @@ class Ds_bt_future_common
             if ($orderBook['code'] == 200 || $orderBook['code'] == 201) {
                 $lastOnOrderBook = json_decode($orderBook['result'], true);
                 // print_r($lastOnOrderBook);
-                $lastOnOrderBook = $lastOnOrderBook['bids'][0][0];
+                $lastOnOrderBook = $lastOnOrderBook['bids'][1][0];
 
                 // $min_lot_size = $dbSymbol->min_lot_size;
 
@@ -115,14 +115,19 @@ class Ds_bt_future_common
         // place order, make sure API key and secret are set, recommend to test on testnet.
         echo "stopPrice = " . $stopPrice;
         $args = [
+            // 'symbol' => $symbol,
+            // 'side' => $side,
+            // 'type' => 'TAKE_PROFIT_MARKET',
+            // 'timeInForce' => 'GTC',
+            // 'stopPrice' => $stopPrice,
+            // 'recvWindow' => $recvWindow,
+            // 'closePosition' => 'true'
+
             'symbol' => $symbol,
             'side' => $side,
-            'type' => 'TAKE_PROFIT_MARKET',
-            // 'quantity' => $quantity,
-            'timeInForce' => 'GTC',
-            'stopPrice' => $stopPrice,
-            'recvWindow' => $recvWindow,
-            'closePosition' => 'true'
+            'type' => 'MARKET',
+            'quantity' => $quantity,
+            'reduceOnly' => 'true',
         ];
 
         $response = self::signedRequest('POST', 'fapi/v1/order', $args, $key, $secret);
