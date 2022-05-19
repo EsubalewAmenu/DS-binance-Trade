@@ -25,7 +25,7 @@ class Ds_bt_future_common
 
     public function priceToTradeOnSingleCoin()
     {
-        return 24;
+        return 15;
     }
     public function depend_on_interval()
     {
@@ -110,19 +110,10 @@ class Ds_bt_future_common
         }
         return false;
     }
-    public function closePosition($symbol, $side, $quantity, $stopPrice, $recvWindow, $key, $secret)
+    public function closePosition($symbol, $side, $quantity, $recvWindow, $key, $secret)
     {
         // place order, make sure API key and secret are set, recommend to test on testnet.
-        echo "stopPrice = " . $stopPrice;
         $args = [
-            // 'symbol' => $symbol,
-            // 'side' => $side,
-            // 'type' => 'TAKE_PROFIT_MARKET',
-            // 'timeInForce' => 'GTC',
-            // 'stopPrice' => $stopPrice,
-            // 'recvWindow' => $recvWindow,
-            // 'closePosition' => 'true'
-
             'symbol' => $symbol,
             'side' => $side,
             'type' => 'MARKET',

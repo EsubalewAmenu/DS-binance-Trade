@@ -95,15 +95,15 @@ class Ds_bt_future_trade
                             if ($position['positionAmt'] < 0) {
                                 $position['positionAmt'] *= -1;
                                 $side = "BUY";
-                                $price = $GLOBALS['Ds_bt_future_common']->buyOrderBook(substr($position['symbol'], 0, -4), $position['initialMargin'], $GLOBALS['Ds_bt_future_common']->baseAsset(), 5, self::api_key())['lastOnOrderBook'];
+                                // $price = $GLOBALS['Ds_bt_future_common']->buyOrderBook(substr($position['symbol'], 0, -4), $position['initialMargin'], $GLOBALS['Ds_bt_future_common']->baseAsset(), 5, self::api_key())['lastOnOrderBook'];
                             } else {
                                 $side = "SELL";
 
-                                $orderBook = $GLOBALS['Ds_bt_future_common']->getDepth($position['symbol'], 5, self::api_key()); // get orderbook (BUY)
+                                // $orderBook = $GLOBALS['Ds_bt_future_common']->getDepth($position['symbol'], 5, self::api_key()); // get orderbook (BUY)
 
-                                $price = $orderBook['sell_by'];
+                                // $price = $orderBook['sell_by'];
                             }
-                            $closePosition = $GLOBALS['Ds_bt_future_common']->closePosition($position['symbol'], $side, $position['positionAmt'], $price, $GLOBALS['Ds_bt_future_common']->recvWindow(), self::api_key(), self::api_secret());
+                            $closePosition = $GLOBALS['Ds_bt_future_common']->closePosition($position['symbol'], $side, $position['positionAmt'], $GLOBALS['Ds_bt_future_common']->recvWindow(), self::api_key(), self::api_secret());
                             print_r($closePosition);
                         }
                     } else if ($ROE < -10) {
