@@ -81,11 +81,11 @@ class Ds_bt_future_trade
                     echo "\n" . $position['symbol'] . " is on hold - leverage = " . $position['leverage'] . " (" . $short_long . ") ROE% = " . $ROE . " Profit=" . $position['unrealizedProfit'] . " recommendation is " . $symbolRecomendation;
 
                     if ($ROE > 1) {
-                        // if (($position['positionAmt'] < 0 && ($symbolRecomendation == "SELL" || $symbolRecomendation == "NUTRAL" || $symbolRecomendation == "BUY" || $symbolRecomendation == "STRONG_BUY")
-                        //     ) ||
-                        //     ($position['positionAmt'] > 0 && ($symbolRecomendation == "SELL" || $symbolRecomendation == "NUTRAL" || $symbolRecomendation == "BUY" || $symbolRecomendation == "STRONG_SELL")
-                        //     )
-                        // ) 
+                        if (($position['positionAmt'] < 0 && ($symbolRecomendation == "SELL" || $symbolRecomendation == "NUTRAL" || $symbolRecomendation == "BUY" || $symbolRecomendation == "STRONG_BUY")
+                            ) ||
+                            ($position['positionAmt'] > 0 && ($symbolRecomendation == "SELL" || $symbolRecomendation == "NUTRAL" || $symbolRecomendation == "BUY" || $symbolRecomendation == "STRONG_SELL")
+                            )
+                        ) 
                         {
                             // echo "buyorderboook test " . $fullSymbol;
                             // print_r($buyOrderBook);
@@ -106,8 +106,8 @@ class Ds_bt_future_trade
                             $closePosition = $GLOBALS['Ds_bt_future_common']->closePosition($position['symbol'], $side, $position['positionAmt'], $GLOBALS['Ds_bt_future_common']->recvWindow(), self::api_key(), self::api_secret());
                             print_r($closePosition);
                         }
-                    } else if ($ROE < -10) {
-                        echo "too much kisara!";
+                    } else if ($ROE < -50) {
+                        echo " Too much kisara!";
                     }
                 }
             }
