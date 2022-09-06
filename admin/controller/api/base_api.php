@@ -27,6 +27,23 @@ class DS_bt_admin_base_api
     {
     }
 
+    function rest_test_trading_view()
+    {
+        add_action('rest_api_init', function () {
+            register_rest_route(ds_bt . '/v1', '/test/trading_view', array(
+                'methods' => 'GET',
+                'callback' => function (WP_REST_Request $request) {
+                    // $tx_hash = $request->get_param('tx_hash');
+
+                    $Ds_bt_usdtinr = new Ds_bt_usdtinr();
+                    $Ds_bt_usdtinr->main();
+                },
+                'permission_callback' => function () {
+                    return true; //current_user_can('edit_others_posts');
+                }
+            ));
+        });
+    }
     function rest_check_trade()
     {
         add_action('rest_api_init', function () {
