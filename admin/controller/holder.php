@@ -80,7 +80,7 @@ class Ds_bt_holder
                     $asset['free'] = 20;
                     self::buyAndHoldCoin($asset, $interval, $depend_on_last_n_history, $trade_coin_volume, $key, $secret, $recvWindow);
                 }
-            }
+            } 
         }
     }
     public function checkAndSellCoin($asset, $interval, $depend_on_last_n_history, $key, $secret, $recvWindow)
